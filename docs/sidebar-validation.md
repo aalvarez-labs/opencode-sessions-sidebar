@@ -160,25 +160,65 @@ packaged-release performance validation is pending.
 - Deactivation/reactivation releases owned subscriptions and controls, and stale asynchronous work
   cannot update a newer or disposed scope.
 
-## Current context-and-controls revision
+## Stability and performance review (2026-10-04)
+
+This review preserves the presentation and public APIs while fixing four bounded behaviors:
+
+- Unchanged permission/question snapshots retain session-row identities and ancestor summaries.
+  Snapshot replacement frees capacity across both request kinds before admitting new requests;
+  overflow stays explicit and a later complete read restores coverage.
+- The model fallback computes descendant totals once instead of walking each subtree repeatedly. A
+  600-session chain previously caused 543,300 activity reads; the regression now enforces at most
+  7,200. Cycles, self-links, attached branches, and adapter-supplied summary precedence are
+  retained. This optimization applies when an adapter does not supply summaries; it is not a
+  measured speedup of the normal V1 rendered sidebar.
+- Listener command authority is revoked when a callback returns or its promise settles. Detached
+  commands can no longer slip into storage during the outer promise cleanup. Awaited commands retain
+  the documented behavior; synchronous and asynchronous regressions verify the persisted document
+  agrees with the acknowledged snapshot.
+- Density/icon configuration requires actual strings. Arrays and coercible objects are rejected
+  instead of being accepted as malformed settings.
+
+`bun run check` passed with 148 tests and 768 assertions, including the existing file-storage,
+reactive-controller, and lifecycle suites. Independent source review covered both the state changes
+and graph optimization.
+
+Fresh Linux x86_64 probes used Bun 1.3.14 and official OpenCode 1.18.30 in isolated temporary state:
+
+| Probe                                                              | Result                                                                     | Existing budget                       |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------- |
+| [Stock input/render](validation/sidebar-review-runtime.json)       | 14 checks, ten frames; input observation p95 118.13 ms across ten samples  | ≤250 ms                               |
+| Stock native update burst                                          | 20 updates in 688.10 ms, three overlapping keyboard samples                | ≤5,000 ms                             |
+| [Stock native attention](validation/sidebar-review-attention.json) | Nine checks, ten frames, five synthetic loopback provider requests         | Correct visible status and disclosure |
+| [Reactive controller](validation/sidebar-review-component.json)    | 500 activity changes and 500 inert events across 250 sessions in 201.62 ms | ≤500 ms; zero extra reads             |
+
+The controller retained zero inert-event recomputations, zero extra SDK reads, and zero instrumented
+subscriptions/lifecycle callbacks after disposal. The same receipt includes the baseline's 178.26 ms
+sample: these single runs on shared hardware establish budget compliance, not an overall speedup or
+regression. The unchanged-attention and deep-fallback improvements have separate deterministic
+regressions. Native receipts record source/build hashes; component source hashes were captured after
+its run. No external model inference was used. Remote deployment, the user's terminal, packaged
+installation, and controlled whole-process resource comparisons remain unverified.
+
+## Previous context-and-controls revision
 
 The updated probes passed on Linux x86_64 with Bun 1.3.14 and official OpenCode 1.18.30, using
 isolated temporary host state and synthetic data. The
-[current input/render receipt](validation/sidebar-context-runtime.json) records 14 checks and ten
-captured frames. It verifies distinct public repository/worktree paths in a linked checkout, mouse
-and keyboard R/B/W selection without expansion, separate context expansion, completion below
-expanded context, and full-value details. At 88×24, Down, PgDn, PgUp, and Esc operate the details
-dialog, with every character of the wrapped branch retained outside the scrollbar column. CRUD,
-organization, restart, light/dark modes, and ASCII/Unicode checks also pass.
+[context-and-controls input/render receipt](validation/sidebar-context-runtime.json) records 14
+checks and ten captured frames. It verifies distinct public repository/worktree paths in a linked
+checkout, mouse and keyboard R/B/W selection without expansion, separate context expansion,
+completion below expanded context, and full-value details. At 88×24, Down, PgDn, PgUp, and Esc
+operate the details dialog, with every character of the wrapped branch retained outside the
+scrollbar column. CRUD, organization, restart, light/dark modes, and ASCII/Unicode checks also pass.
 
-The [current native attention receipt](validation/sidebar-context-attention.json) records nine
-checks and ten frames from five deterministic loopback provider requests, with no external
-inference. Actual retry, child question and permission, resolved idle, and settled error are visible
-independently of completion. Expanded parents use an aggregate status glyph; collapsed groups retain
-textual counts. Mouse and keyboard disclosure show live children between controls and parent
-context. The active parent's completion action stays below both expanded children and context.
-Settled children leave the live count, while their errors remain visible through the parent.
-Switching to the newly created current session also exercises route reconciliation.
+The [context-and-controls native attention receipt](validation/sidebar-context-attention.json)
+records nine checks and ten frames from five deterministic loopback provider requests, with no
+external inference. Actual retry, child question and permission, resolved idle, and settled error
+are visible independently of completion. Expanded parents use an aggregate status glyph; collapsed
+groups retain textual counts. Mouse and keyboard disclosure show live children between controls and
+parent context. The active parent's completion action stays below both expanded children and
+context. Settled children leave the live count, while their errors remain visible through the
+parent. Switching to the newly created current session also exercises route reconciliation.
 
 | Current probe                                                                      | Observed result                         | Unchanged budget             |
 | ---------------------------------------------------------------------------------- | --------------------------------------- | ---------------------------- |
@@ -187,13 +227,13 @@ Switching to the newly created current session also exercises route reconciliati
 | Reactive controller: 250 sessions, 500 activity changes and 500 inert token events | 214.25 ms; zero extra reads             | ≤500 ms and zero extra reads |
 
 Both native probes captured source and built-artifact hashes before launch and verified they were
-unchanged at completion. The [current controller receipt](validation/sidebar-context-component.json)
-records zero token-driven recomputations and zero retained instrumented subscriptions or lifecycle
-callbacks after disposal. Its source hashes were recorded immediately afterward and agree with the
-overlapping native receipts. The
-[ordered input diagnostics](validation/sidebar-context-input-diagnostics.json) preserve every timing
-sample. Ten samples on shared hardware still do not establish stable tail latency or whole-process
-resource overhead.
+unchanged at completion. The
+[context-and-controls controller receipt](validation/sidebar-context-component.json) records zero
+token-driven recomputations and zero retained instrumented subscriptions or lifecycle callbacks
+after disposal. Its source hashes were recorded immediately afterward and agree with the overlapping
+native receipts. The [ordered input diagnostics](validation/sidebar-context-input-diagnostics.json)
+preserve every timing sample. Ten samples on shared hardware still do not establish stable tail
+latency or whole-process resource overhead.
 
 The [attempt history](validation/sidebar-context-attempts.json) separates outdated harness
 expectations, the sandbox's initial loopback-bind refusal, the cold-linked-project observation, and

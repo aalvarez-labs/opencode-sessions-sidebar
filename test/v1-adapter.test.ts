@@ -275,6 +275,86 @@ describe("V1 adapter contract with a fake public host", () => {
     expect(adapter.state().attentionCount).toBe(0);
   });
 
+  test("unchanged attention snapshots preserve row and ancestor summary identities", async () => {
+    const host = new FakeHost();
+    host.sessions = [session("parent"), session("child", { parentID: "parent" }), session("other")];
+    host.permissions = [permission("p", "child")];
+    host.questions = [question("q", "child")];
+    const adapter = adapterFor(host);
+    await adapter.start();
+    const before = adapter.list();
+    const summary = adapter.summary("parent");
+    const changedRows: string[] = [];
+    adapter.subscribe((change) => changedRows.push(...change.sessionIds));
+
+    await adapter.refresh();
+
+    expect(adapter.list().every((row, index) => row === before[index])).toBe(true);
+    expect(adapter.summary("parent")).toBe(summary);
+    expect(changedRows).toEqual([]);
+    expect(adapter.get("child")).toMatchObject({ permissions: 1, questions: 1 });
+    expect(adapter.state()).toMatchObject({ phase: "ready", attentionCoverage: "complete" });
+  });
+
+  test("snapshot attention replacement frees capacity across both request kinds", async () => {
+    const host = new FakeHost();
+    host.sessions = [session("a"), session("b")];
+    host.questions = [question("old-question", "a")];
+    const adapter = adapterFor(host, { maxAttention: 1 });
+    await adapter.start();
+    host.questions = [];
+    host.permissions = [permission("new-permission", "b")];
+
+    await adapter.refresh();
+
+    expect(adapter.get("a")).toMatchObject({ permissions: 0, questions: 0 });
+    expect(adapter.get("b")).toMatchObject({ permissions: 1, questions: 0 });
+    expect(adapter.state()).toMatchObject({ attentionCount: 1, attentionCoverage: "complete" });
+  });
+
+  test("snapshot attention owner changes invalidate only the previous and next owners", async () => {
+    const host = new FakeHost();
+    host.sessions = [session("a"), session("b"), session("other")];
+    host.permissions = [permission("p", "a")];
+    const adapter = adapterFor(host, { maxAttention: 1 });
+    await adapter.start();
+    const other = adapter.get("other");
+    host.permissions = [permission("p", "b")];
+    const changedRows = new Set<string>();
+    adapter.subscribe((change) => change.sessionIds.forEach((id) => changedRows.add(id)));
+
+    await adapter.refresh();
+
+    expect(adapter.get("a")?.permissions).toBe(0);
+    expect(adapter.get("b")?.permissions).toBe(1);
+    expect(adapter.get("other")).toBe(other);
+    expect([...changedRows].sort()).toEqual(["a", "b"]);
+    expect(adapter.state()).toMatchObject({ attentionCount: 1, attentionCoverage: "complete" });
+  });
+
+  test("snapshot attention remains bounded across kinds and restores coverage after a smaller read", async () => {
+    const host = new FakeHost();
+    host.sessions = [session("a"), session("b")];
+    host.permissions = [permission("p1", "a"), permission("p2", "b")];
+    host.questions = [question("q1", "a"), question("q2", "b")];
+    const adapter = adapterFor(host, { maxAttention: 3 });
+    await adapter.start();
+    expect(adapter.state()).toMatchObject({ attentionCount: 3, attentionCoverage: "partial" });
+    expect(adapter.get("a")).toMatchObject({ permissions: 1, questions: 1 });
+    expect(adapter.get("b")).toMatchObject({ permissions: 1, questions: 0 });
+
+    host.permissions = [];
+    await adapter.refresh();
+
+    expect(adapter.state()).toMatchObject({
+      attentionCount: 2,
+      attentionCoverage: "complete",
+      partial: false,
+    });
+    expect(adapter.get("a")).toMatchObject({ permissions: 0, questions: 1 });
+    expect(adapter.get("b")).toMatchObject({ permissions: 0, questions: 1 });
+  });
+
   test("deletion during a refresh wins over both stale list and attention responses", async () => {
     const host = new FakeHost();
     host.sessions = [session("a")];

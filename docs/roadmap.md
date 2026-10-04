@@ -22,8 +22,10 @@ mouse/keyboard actions. The approved Continuista presentation now adds a dedupli
 layout, independent third-line context selectors, live subagent disclosure above context,
 independent completion colors, explicit observed error state, and a shared visibility-bound
 animation clock. Its stock-host rendering and input evidence, component budget, and remaining
-release limits are recorded in [sidebar validation](sidebar-validation.md). Stages 5–6 remain
-planned. Publishing a package or release is a separate action after the gates pass.
+release limits are recorded in [sidebar validation](sidebar-validation.md). The October 4 stability
+review adds regression-covered snapshot reconciliation, linear fallback summaries, listener cleanup,
+and strict display-option validation, with fresh stock-host smoke receipts in that document. Stages
+5–6 remain planned. Publishing a package or release is a separate action after the gates pass.
 
 The optional [terminal font setup](terminal-fonts.md) pins one licensed mono family for consistent
 text and private-use glyph selection. Native font rendering across macOS/Ghostty and Windows
