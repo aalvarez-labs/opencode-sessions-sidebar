@@ -479,6 +479,9 @@ try {
     "Active controls and repository context must occupy separate rows.",
   );
   assert.equal(node(contextFrame, contextId)!.y, node(contextFrame, controlsId)!.y + 1);
+  assert(!node(contextFrame, `sidebar-session-${activeId}-menu`), "Active row must omit its menu.");
+  assert(node(contextFrame, `sidebar-session-${activeId}-completion`));
+  assert(node(contextFrame, "sidebar-menu"), "Global header menu must remain available.");
   assert(!node(contextFrame, contextDetailsId), "Context must start collapsed.");
   for (const [field, expected] of [
     ["B", "synthetic"],
@@ -640,9 +643,16 @@ try {
 
   await browse("Synthetic Beta");
   await choose("Open session");
-  await until(
-    (snapshot) => snapshot.route.params?.sessionID === snapshot.initialIds[1],
+  current = await until(
+    (snapshot) =>
+      snapshot.route.params?.sessionID === snapshot.initialIds[1] &&
+      Boolean(node(snapshot, `sidebar-session-${activeId}-menu`)) &&
+      Boolean(node(snapshot, `sidebar-session-${snapshot.initialIds[1]}-completion`)),
     "Native navigation did not confirm opening Later session.",
+  );
+  assert(
+    !node(current, `sidebar-session-${current.initialIds[1]}-menu`),
+    "New active row must omit its menu while the previous row regains it.",
   );
   checks.push("real keyboard open observed on native route; Later membership retained");
   await click("Synthetic Alpha");
@@ -658,18 +668,23 @@ try {
     2,
     "Opening a row must preserve Later membership.",
   );
-  await click("...", 1);
+  assert(!node(current, `sidebar-session-${activeId}-menu`), "Active row menu reappeared.");
+  await clickNode(`sidebar-session-${activeId}-completion`);
+  current = await until(
+    (snapshot) => snapshot.organization?.completionStates.every((entry) => !entry.done) === true,
+    "Direct active-row completion control did not clear completion.",
+  );
+  assert.equal(current.route.params?.sessionID, activeId);
+  assert.equal(current.dialogDepth, 0);
+  assert.equal(current.organization?.later.length, 2);
+  await clickNode(`sidebar-session-${current.initialIds[1]}-menu`);
   await until(
     (snapshot) => text(snapshot).includes("Open session"),
-    "Explicit row action control did not open the shared menu.",
+    "Non-active row menu did not open its shared actions.",
   );
-  await choose("Unmark completed");
-  await until(
-    (snapshot) => snapshot.organization?.completionStates.every((entry) => !entry.done) === true,
-    "Explicit row menu did not clear completion.",
-  );
+  await dismiss();
   checks.push(
-    "real PTY mouse row opens its session directly; explicit row menu unmarks without changing Later",
+    "active row omits its ellipsis and direct completion unmarks without a dialog, navigation, or Later change; switching sessions transfers the menu to the non-active row, whose shared actions remain usable",
   );
 
   await request("command", { command: "sessions-sidebar.create" });

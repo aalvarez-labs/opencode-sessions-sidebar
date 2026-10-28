@@ -624,13 +624,16 @@ export function SidebarView(props: {
             >
               {symbol("⌫", "del", "\uF48E")}
             </text>
-            <text
-              fg={theme().textMuted}
-              flexShrink={0}
-              onMouseUp={stop(() => props.actions.session(row().session.id))}
-            >
-              {symbol("…", "...")}
-            </text>
+            <Show when={!p.active}>
+              <text
+                id={`sidebar-session-${row().session.id}-menu`}
+                fg={theme().textMuted}
+                flexShrink={0}
+                onMouseUp={stop(() => props.actions.session(row().session.id))}
+              >
+                {symbol("…", "...")}
+              </text>
+            </Show>
           </box>
           <Show when={children().length > 0}>
             <Show when={expanded()}>
@@ -754,7 +757,7 @@ export function SidebarView(props: {
           <text fg={theme().text} attributes={1} flexGrow={1}>
             Active session:
           </text>
-          <text fg={theme().textMuted} onMouseUp={() => props.actions.menu()}>
+          <text id="sidebar-menu" fg={theme().textMuted} onMouseUp={() => props.actions.menu()}>
             {symbol("…", "...")}
           </text>
         </box>

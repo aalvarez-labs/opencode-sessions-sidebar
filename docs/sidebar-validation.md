@@ -44,18 +44,20 @@ storage. Keep the package private until the separate release gates pass.
 
 Open the host command palette (Ctrl+P with the stock bindings) and choose **Sessions sidebar:
 browse**, **create session**, **refresh**, or **settings**. Browse is also available on the home
-screen and in the sidebar header menu. Clicking a session title opens it directly; the row ellipsis
-opens its actions. Keyboard Browse opens the same actions. Quick pin/Later controls retain
-independent memberships; delete requires the host confirmation dialog.
+screen and in the sidebar header menu. Clicking a session title opens it directly. Non-active rows
+have an ellipsis for their actions; the active row omits it and keeps Mark/Unmark completed at the
+bottom. Browse exposes the full actions for every session, including the active one. The global
+header menu stays available. Quick pin/Later controls retain independent memberships; delete
+requires the host confirmation dialog.
 
 The active session is followed by Later, Pinned sessions, and Other sessions, in that display
 priority. A session has only one full row. Its first line contains the independent status indicator,
 title, and completion check. The second line contains pin/Later controls, a yellow live-subagent
-count and disclosure when relevant, the session's primary agent, age, red delete, and actions menu.
-Confirmed idle descendants are excluded from that live count; uncertain activity remains visible.
-Expanding live subagents inserts their rows immediately after the controls and before the parent's
-context line. Explicitly promoted children retain a link to their row's group. Configured public
-agent colors are used when available; unknown colors stay gray.
+count and disclosure when relevant, the session's primary agent, age, red delete, and an actions
+menu on non-active rows. Confirmed idle descendants are excluded from that live count; uncertain
+activity remains visible. Expanding live subagents inserts their rows immediately after the controls
+and before the parent's context line. Explicitly promoted children retain a link to their row's
+group. Configured public agent colors are used when available; unknown colors stay gray.
 
 The third line contains a separate yellow context arrow and **[R][B][W]** selectors for repository,
 branch, and worktree. Selecting a field changes only the inline value; it does not expand context.
@@ -159,6 +161,23 @@ packaged-release performance validation is pending.
   hold navigation. No prompt is submitted by organization actions.
 - Deactivation/reactivation releases owned subscriptions and controls, and stale asynchronous work
   cannot update a newer or disposed scope.
+
+## Active-session menu correction (2026-10-28)
+
+The active row now omits its ellipsis while keeping the direct Mark/Unmark completed action last.
+Other rows retain their menus, and Browse continues to expose the active session's full actions. The
+global header menu is independent of this rule.
+
+The [stock-host receipt](validation/sidebar-active-menu-runtime.json) records a fresh pass on
+official OpenCode 1.18.30 with Bun 1.3.14 on Linux x86_64: 14 checks and ten captured frames. The
+updated probe verifies the active row has no menu, the previous row regains it after navigation, the
+active completion control unmarks without a dialog or a route/Later change, and the non-active row
+menu still opens. Existing keyboard Browse, native CRUD, context, restart, and narrow-layout checks
+also pass. Input observation p95 was 150.78 ms against the unchanged 250 ms smoke budget.
+
+`bun run check` passed all 148 tests and 768 assertions. Source/build hashes in the receipt identify
+the tested revision. The older receipts below describe their dated source revisions; this focused
+correction does not add remote or cross-platform rendering evidence.
 
 ## Stability and performance review (2026-10-04)
 

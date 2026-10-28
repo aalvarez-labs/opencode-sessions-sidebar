@@ -192,16 +192,19 @@ cell-height preferences are optional user settings, not changes made by this plu
 ### Continuista presentation
 
 Keep the terminal-native three-line row: an independent activity/attention icon and title; pin,
-Later, a yellow live-subagent disclosure/count, primary agent, age, red delete, and menu controls;
-then collapsible repository/branch/worktree context. A completed title and its separate check use
-success green. Creation and Mark/Unmark completed actions use warning yellow. Inactive pin/Later
-controls use subdued gray and a different glyph from their normal-text active counterparts.
+Later, a yellow live-subagent disclosure/count, primary agent, age, red delete, and a menu on
+non-active rows; then collapsible repository/branch/worktree context. A completed title and its
+separate check use success green. Creation and Mark/Unmark completed actions use warning yellow.
+Inactive pin/Later controls use subdued gray and a different glyph from their normal-text active
+counterparts.
 
 The active session stays at the top, followed by Later, Pinned sessions, and Other sessions. Display
 full rows once with that priority without changing their independent saved memberships. A row opens
-the session directly; its ellipsis opens the shared actions menu. Delete retains native
-confirmation. Move display management into the header menu and palette rather than a permanent
-toolbar.
+the session directly. Non-active rows expose the shared actions menu through an ellipsis. The active
+row omits that ellipsis because its Mark/Unmark completed action remains visible at the bottom.
+Browse still exposes the active session's full actions, including rename. Delete retains native
+confirmation. The global header menu remains available for display management alongside the palette,
+rather than a permanent toolbar.
 
 Context selectors `[R][B][W]` switch the visible field without changing expansion. The selected
 field uses normal text color and the others muted color. A separate yellow disclosure expands
