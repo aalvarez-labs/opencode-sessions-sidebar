@@ -22,8 +22,19 @@ mouse/keyboard actions. The approved Continuista presentation now adds a dedupli
 layout, independent third-line context selectors, live subagent disclosure above context,
 independent completion colors, explicit observed error state, and a shared visibility-bound
 animation clock. Its stock-host rendering and input evidence, component budget, and remaining
-release limits are recorded in [sidebar validation](sidebar-validation.md). Stages 5–6 remain
-planned. Publishing a package or release is a separate action after the gates pass.
+release limits are recorded in [sidebar validation](sidebar-validation.md). The October 4 stability
+review adds regression-covered snapshot reconciliation, linear fallback summaries, listener cleanup,
+and strict display-option validation, with fresh stock-host smoke receipts in that document. The
+October 28 presentation correction removes the active row's redundant ellipsis while keeping its
+direct completion action, with stock-host navigation and action checks recorded there. Stages 5–6
+remain planned. Publishing a package or release is a separate action after the gates pass.
+
+The [Codespaces lab](codespaces-lab.md) adds reproducible preparation for an isolated
+browser-terminal trial with the pinned V1 host, separate scratch profiles, and the existing
+stock-host probes. Successful Codespaces provisioning and the manual browser-terminal checklist
+remain pending; this preparation does not close remote-host or packaged-release validation gates.
+The clean interactive trial also exposed a command-palette visibility defect: sidebar commands now
+remain reachable while the host palette is open, with a real Ctrl+P/filter/Enter runtime regression.
 
 The optional [terminal font setup](terminal-fonts.md) pins one licensed mono family for consistent
 text and private-use glyph selection. Native font rendering across macOS/Ghostty and Windows

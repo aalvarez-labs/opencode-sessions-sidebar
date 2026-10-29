@@ -1,4 +1,6 @@
 # Logs
+.sidebar-lab/
+
 logs
 *.log
 npm-debug.log*

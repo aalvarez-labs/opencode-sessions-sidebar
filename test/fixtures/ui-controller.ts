@@ -443,6 +443,12 @@ async function options() {
   assert.deepEqual(parseSidebarOptions(valid), valid);
   assert.throws(() => parseSidebarOptions({ ...valid, reducedMotion: "false" }), /boolean/);
   assert.throws(() => parseSidebarOptions({ ...valid, icons: "invalid" }), /icons/);
+  for (const icons of [["nerd"], { toString: () => "ascii" }, null]) {
+    assert.throws(() => parseSidebarOptions({ ...valid, icons }), /icons/);
+  }
+  for (const density of [["compact"], { toString: () => "balanced" }, null]) {
+    assert.throws(() => parseSidebarOptions({ ...valid, density }), /density/);
+  }
   const fixture = await controllerFixture();
   try {
     assert.equal(fixture.controller.reducedMotion(), false);

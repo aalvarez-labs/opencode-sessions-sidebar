@@ -21,6 +21,10 @@ V1** through its public APIs. The minimum supported release will be published af
 runtime testing. A future V2 adapter can live in this repository and share the domain model; V2
 support is not currently implemented.
 
+For an isolated browser-terminal trial, see the [Codespaces lab](docs/codespaces-lab.md). Its
+development container pins the tested toolchain and provides verification and separate scratch
+profiles without installing tools on the Mac. Actual Codespaces browser validation remains pending.
+
 See [terminal font setup](docs/terminal-fonts.md) for a pinned optional font family and terminal
 examples. Font preparation is explicit; activation never downloads fonts or changes terminal
 settings.

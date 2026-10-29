@@ -245,6 +245,38 @@ export function createV1Adapter(host: V1HostPort, inputScope: V1Scope, options: 
     changed([...(previous ? [previous] : []), ...(sessionId ? [sessionId] : [])], true);
   }
 
+  function reconcileAttention(
+    pendingPermissions: readonly { id: string; sessionID: string }[],
+    pendingQuestions: readonly { id: string; sessionID: string }[],
+  ) {
+    const nextPermissions = new Map<string, string>();
+    const nextQuestions = new Map<string, string>();
+    let overflow = false;
+    for (const [requests, next] of [
+      [pendingPermissions, nextPermissions],
+      [pendingQuestions, nextQuestions],
+    ] as const) {
+      for (const request of requests) {
+        if (deleted.has(request.sessionID)) continue;
+        if (
+          !next.has(request.id) &&
+          nextPermissions.size + nextQuestions.size >= limits.maxAttention
+        ) {
+          overflow = true;
+          continue;
+        }
+        next.set(request.id, request.sessionID);
+      }
+    }
+    // Remove obsolete requests from both kinds before adding replacements, so a
+    // full previous snapshot cannot consume the incoming snapshot's capacity.
+    for (const id of permissions.keys()) if (!nextPermissions.has(id)) attention("permissions", id);
+    for (const id of questions.keys()) if (!nextQuestions.has(id)) attention("questions", id);
+    for (const [id, owner] of nextPermissions) attention("permissions", id, owner);
+    for (const [id, owner] of nextQuestions) attention("questions", id, owner);
+    if (overflow) incomplete("Attention capacity reached; pending requests may be missing");
+  }
+
   function removeSession(id: string, tombstone = true) {
     const previous = sessions.get(id);
     const affected = ancestry(id);
@@ -441,16 +473,7 @@ export function createV1Adapter(host: V1HostPort, inputScope: V1Scope, options: 
         for (const session of listed.data) putSession(session);
         for (const id of sessions.keys())
           putActivity(id, statuses.data[id]?.type ?? (listedIds.has(id) ? "idle" : "unknown"));
-        for (const id of [...permissions.keys()]) attention("permissions", id);
-        for (const id of [...questions.keys()]) attention("questions", id);
-        for (const request of pendingPermissions.data) {
-          if (!deleted.has(request.sessionID))
-            attention("permissions", request.id, request.sessionID);
-        }
-        for (const request of pendingQuestions.data) {
-          if (!deleted.has(request.sessionID))
-            attention("questions", request.id, request.sessionID);
-        }
+        reconcileAttention(pendingPermissions.data, pendingQuestions.data);
         for (const entry of replay) {
           if (entry.type === "action.snapshot") putSession(entry.session);
           else apply(entry);

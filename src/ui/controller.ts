@@ -42,10 +42,14 @@ export function parseSidebarOptions(input: Record<string, unknown> | undefined):
     throw new TypeError("workspaceId must be a nonempty string.");
   if (
     input.density !== undefined &&
-    !["compact", "balanced", "comfortable"].includes(String(input.density))
+    (typeof input.density !== "string" ||
+      !["compact", "balanced", "comfortable"].includes(input.density))
   )
     throw new TypeError("density must be compact, balanced, or comfortable.");
-  if (input.icons !== undefined && !["unicode", "ascii", "nerd"].includes(String(input.icons)))
+  if (
+    input.icons !== undefined &&
+    (typeof input.icons !== "string" || !["unicode", "ascii", "nerd"].includes(input.icons))
+  )
     throw new TypeError("icons must be unicode, ascii, or nerd.");
   if (input.reducedMotion !== undefined && typeof input.reducedMotion !== "boolean")
     throw new TypeError("reducedMotion must be a boolean.");

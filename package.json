@@ -27,6 +27,9 @@
     "smoke:sidebar": "bun run scripts/smoke-sidebar.ts",
     "benchmark:sidebar": "bun --conditions=browser scripts/benchmark-sidebar.ts",
     "smoke:sidebar:attention": "bun run scripts/smoke-sidebar-attention.ts",
+    "lab:start": "bun run scripts/codespaces-lab.ts start",
+    "lab:fresh": "bun run scripts/codespaces-lab.ts fresh",
+    "lab:verify": "bun run scripts/codespaces-lab.ts verify",
     "fonts:prepare": "bun run scripts/prepare-fonts.ts"
   },
   "devDependencies": {
