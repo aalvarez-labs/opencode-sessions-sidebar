@@ -11,8 +11,8 @@ function activateSidebar(api: TuiPluginApi, options: SidebarOptions): void {
     const controller = createSidebarController(api, checked);
     const actions = createSidebarActions(api, controller);
     let disposed = false;
+    // The command palette enters modal mode; its commands must remain reachable there.
     const unregisterCommands = api.keymap.registerLayer({
-      mode: "base",
       commands: [
         {
           name: "sessions-sidebar.browse",

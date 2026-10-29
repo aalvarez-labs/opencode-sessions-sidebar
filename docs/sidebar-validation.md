@@ -4,6 +4,11 @@ The development TUI entrypoint targets stock OpenCode **1.18.30**. This is one t
 a minimum-version or V2 compatibility claim. The package remains private; public release and
 packaged-installation validation are separate roadmap work.
 
+The [Codespaces lab](codespaces-lab.md) provides a pinned development container, isolated
+interactive profiles, and a command to run both stock-host probes. Preparing that environment does
+not establish Codespaces browser-terminal compatibility; follow its manual checklist and record that
+evidence separately.
+
 ## Load the local development build
 
 Build this checkout with Bun 1.3.14 (`bun install --frozen-lockfile && bun run build`). Add the
@@ -161,6 +166,27 @@ packaged-release performance validation is pending.
   hold navigation. No prompt is submitted by organization actions.
 - Deactivation/reactivation releases owned subscriptions and controls, and stale asynchronous work
   cannot update a newer or disposed scope.
+
+## Clean lab preparation and palette correction (2026-10-29)
+
+An interactive provider-free Linux trial exposed a palette visibility defect. The command-only
+registration layer was restricted to base mode, while the host palette uses modal mode. Removing
+that restriction keeps sidebar commands reachable inside the palette. The smoke now opens Ctrl+P,
+filters for Browse, verifies an actual result beyond the filter text, and presses Enter to open the
+sidebar dialog; direct command dispatch alone did not cover this path.
+
+The [fresh stock-host receipt](validation/sidebar-palette-lab-runtime.json) records 15 checks and
+ten frames with OpenCode 1.18.30 and Bun 1.3.14 on Linux x86_64. Input observation p95 was 134.40
+ms, below the unchanged 250 ms budget. Source/build hashes identify the tested working tree on top
+of the receipt's recorded base commit. `bun run lab:verify` also passed all 148 tests / 768
+assertions and the separate native attention smoke with five loopback provider requests. No external
+model was used. The isolated launcher opened the host, rendered the sidebar after creating a
+session, and selected a fresh profile without deleting the previous one.
+
+The Codespaces workflow builds the development image and repeats verification as its non-root user,
+retaining synthetic receipts as an artifact. Its result is reported by the PR checks. A container
+check is separate from provisioning a Codespace and testing its browser terminal; those manual steps
+remain pending in the [lab guide](codespaces-lab.md).
 
 ## Active-session menu correction (2026-10-28)
 

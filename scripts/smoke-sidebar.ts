@@ -792,11 +792,31 @@ try {
   await until((snapshot) => snapshot.frame.width === 140, "Wide resize was not applied.");
 
   const beforeLifecycle = (await request<Snapshot>("snapshot")).organization;
-  await request("command", { command: "sessions-sidebar.browse" });
+  input("\u0010");
   await until(
-    (snapshot) => snapshot.dialogDepth > 0,
-    "Owned dialog did not open before deactivation.",
+    (snapshot) => snapshot.dialogDepth > 0 && dialogText(snapshot).includes("Commands"),
+    "Ctrl+P did not open the native command palette.",
   );
+  const paletteTitle = "Sessions sidebar: browse";
+  input(paletteTitle);
+  await until(
+    (snapshot) =>
+      dialogText(snapshot)
+        .split("\n")
+        .filter((line) => line.includes(paletteTitle)).length >= 2 &&
+      !dialogText(snapshot).includes("No results found"),
+    "Sidebar Browse must appear as a palette result, not only as typed filter text.",
+  );
+  input("\r");
+  await until(
+    (snapshot) =>
+      snapshot.dialogDepth > 0 &&
+      dialogText(snapshot).includes("Sessions sidebar") &&
+      dialogText(snapshot).includes("Create session") &&
+      !dialogText(snapshot).includes("Commands"),
+    "Selecting Browse from the native palette did not open the sidebar session dialog.",
+  );
+  checks.push("real Ctrl+P, palette filtering, and Enter open the sidebar Browse dialog");
   const deactivated = await request<{ changed: boolean }>("deactivate");
   assert(deactivated.changed);
   await until(
