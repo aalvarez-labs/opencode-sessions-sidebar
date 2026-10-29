@@ -47,6 +47,8 @@ jobs:
           path: |
             .sidebar-lab/reports/*/sidebar.json
             .sidebar-lab/reports/*/attention.json
+            .sidebar-lab/reports/*/sidebar-frames.json
+            .sidebar-lab/reports/*/attention-frames.json
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

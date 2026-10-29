@@ -47,6 +47,16 @@ with the report; a partial report or a locally passing run is not evidence that 
 Codespaces check passed. The smoke budgets are unchanged, so a resource-constrained Codespace may
 expose a failure that needs investigation.
 
+The same run saves `sidebar-frames.json` and `attention-frames.json` alongside the reports. These
+contain actual renderer cells, colors, and layout captured from stock OpenCode during the synthetic
+probes. The GitHub Actions workflow retains these files and the reports in the
+`codespaces-lab-receipts` artifact for seven days. An authorized GitHub connector can download that
+artifact for review without signing in to GitHub in a browser.
+
+These files are rendered-cell evidence. Any replay or PNG reconstructed from them is not a
+screenshot of the Codespaces browser and does not provide live terminal control. Browser fonts,
+keyboard transport, and the manual interaction checklist still require their own validation.
+
 ## Open the interactive lab
 
 Run:

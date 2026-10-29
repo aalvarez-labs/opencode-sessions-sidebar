@@ -93,6 +93,8 @@ if (command === "fresh") {
     OPENCODE_BIN: executable,
     SIDEBAR_SMOKE_REPORT: join(report, "sidebar.json"),
     SIDEBAR_ATTENTION_REPORT: join(report, "attention.json"),
+    SIDEBAR_SMOKE_FRAMES: join(report, "sidebar-frames.json"),
+    SIDEBAR_ATTENTION_FRAMES: join(report, "attention-frames.json"),
   };
   await mkdir(env.HOME!, { recursive: true });
   console.log(`Lab verification reports: ${report}`);
