@@ -62,6 +62,31 @@ completion. Failures write a partial report when a report path is supplied and t
 partial report is never a successful acceptance receipt. The parent directory must already exist.
 Temporary synthetic host data and processes are cleaned up, with a six-minute watchdog.
 
+### Thread attribution diagnostic
+
+`SIDEBAR_RESOURCE_DIAGNOSTIC=true` retains the separate thirty-second, one-pair diagnostic at 250
+sessions. Each one-second trace point now includes a bounded Linux `/proc/<pid>/task` snapshot: up
+to 128 threads, at most eight concurrent reads, thread names and user/system CPU tick totals. The
+helper is included in source hashes. No thread enumeration runs in either acceptance mode.
+
+Interval attribution matches both TID and start time, so a reused TID is not mistaken for the same
+thread. Newly observed, missing, unreadable, truncated and regressed counters remain explicit.
+Snapshots are non-atomic and slightly offset from aggregate process samples; a thread that starts
+and exits between snapshots can be missed entirely. Matched thread CPU is therefore partial
+attribution, never an alternative process total or a passing resource receipt. Reading these files
+also adds diagnostic overhead in the parent process. This mode does not evaluate acceptance.
+
+The diagnostic trace additionally parses `RssAnon`, `RssFile`, `RssShmem` and `VmSwap` from the
+`/proc/<pid>/status` content already read for each process sample. This adds no filesystem reads and
+does not change sample cadence. Kernel `kB` counts are recorded as KiB and converted to MiB; zero is
+a measured value, while missing, malformed or duplicate fields explicitly remain unavailable. No
+memory-breakdown parsing runs in either acceptance mode. The pure parser is included in source
+hashes. These counters distinguish anonymous, file-backed and shared resident memory; swap is
+separate from RSS. They do not identify a JavaScript object, native allocation or worker as the
+owner, and their sum need not match the separately sampled aggregate RSS exactly. No heap snapshot,
+forced garbage collection, extra stabilization interval or budget change is introduced by this
+diagnostic.
+
 ## Scope and remaining limits
 
 ### Additional delayed-start gate
@@ -92,6 +117,65 @@ This short idle workload does not establish sustained-load CPU/memory, input lat
 rendering, browser/remote transport behavior, power-loss recovery or cross-platform runtime
 compatibility. Idle sessions also do not exercise busy-row animation or attention visibility under
 load. Keep the existing correctness/input/attention probes and broader release gates separate.
+
+## November 7 development merge
+
+[PR #8](https://github.com/aalvarez-labs/opencode-sessions-sidebar/pull/8) integrated the reviewed
+design into `main` at the owner's explicit request. This is not resource acceptance or a package
+release. The tested product head was `508024130543d9650effdddbb4d774e5147e884b`, with TUI SHA-256
+`a0a2c756b93ef1facff84b165d8db6046ef0b07e006e4e718befbe4e86438b3a`. The merge commit is
+`84d11919cc81811298b298ea161ea16a58c6fe62`.
+
+The
+[hosted campaign](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/42323803252)
+passed both graphical jobs and native transport checks. Its resource job failed the original short
+CPU gate. Keep that failure alongside the successful CI and container jobs:
+
+| Comparison            | Median added RSS | Median added CPU | Result                           |
+| --------------------- | ---------------: | ---------------: | -------------------------------- |
+| Short, 25 sessions    |       9.0078 MiB |   -8.5927 points | Passed                           |
+| Short, 250 sessions   |       3.5781 MiB |    1.2050 points | **Failed CPU**                   |
+| Delayed, 250 sessions |      16.2891 MiB |    0.9999 points | Passed, no meaningful CPU margin |
+
+All three short 250-session CPU deltas exceeded the fixed 1.0-point budget: 1.2050, 4.5966 and
+1.2000. With 100 clock ticks per second, these represent 60, 230 and 60 ms of added process CPU in
+the roughly five-second windows. The delayed pass does not cancel them. No budget, repetition count
+or observation window was changed in response.
+
+Every enabled 250-session receipt reported zero render-loop increments between readiness and the
+measurement receipt. Viewport scans and animation therefore cannot explain ongoing rendering cost in
+those windows. The measurement still includes all TUI process threads and host startup work; it does
+not by itself attribute CPU to sidebar JavaScript. Thread-level diagnostic evidence is needed before
+changing the health fallback or rendering semantics to address this failure.
+
+## November 7 legibility follow-up
+
+The
+[PR #9 campaign](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/42359267055)
+tested `b4eca4629ba3a48b3be7c29f2424cf967f2351ac`, TUI SHA-256
+`c192771e64a01d8a117e47e323e660950129522e93d341327867e23cada33a97`. Both graphical jobs passed,
+including the seven shared approved-design checks. The resource job failed its original short CPU
+gate; the PR remained draft. GitHub's test-merge checkout had the same source tree as this head.
+
+| Comparison            | Median added RSS | Median added CPU | Result         |
+| --------------------- | ---------------: | ---------------: | -------------- |
+| Short, 25 sessions    |      -7.3945 MiB |   -4.3990 points | Passed         |
+| Short, 250 sessions   |      -0.4922 MiB |    1.2124 points | **Failed CPU** |
+| Delayed, 250 sessions |      46.9023 MiB |   -0.4995 points | Passed         |
+
+Short 250-session CPU pair deltas were +1.2124, +4.5984 and -4.9993 points. The corresponding RSS
+deltas were -62.0313, +86.3281 and -0.4922 MiB; delayed RSS pairs were +100.1250, +46.9023 and
++26.2852 MiB. This variability prevents interpreting the negative medians as a stable saving. Every
+enabled 250-session measurement recorded zero additional render-loop frames. The delayed pass does
+not cancel the short failure, and the earlier `852b140` short RSS failure remains relevant.
+
+The separate thirty-second diagnostic ended at +185.383 MiB process RSS: anonymous residency
+differed by +185.602 MiB, file-backed residency by +0.063 MiB, with no shared RSS or swap. The
+non-atomic counters do not identify allocation ownership. Renderable/text-buffer counts remained
+stable; exposed heap counters cannot account for all host worker or native allocations. Further
+function-level diagnosis must distinguish the TUI JavaScript VM from the host's worker VM and keep
+profiled measurements separate from acceptance. No forced GC or changed limits are justified by
+these receipts.
 
 ## Recorded November 6 comparison
 

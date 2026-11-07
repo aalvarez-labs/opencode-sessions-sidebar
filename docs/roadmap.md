@@ -82,8 +82,35 @@ inline creation header, compact live-subagent trees, default active expansion wi
 choices, counted nonempty groups, aligned completion action and a verified clock icon family. A
 shared, explicitly synthetic design fixture exercises the unchanged built product inside stock
 OpenCode on Linux and macOS. This is presentation evidence only; native execution/attention checks
-remain independent. Revised-build pixel review is pending and does not close the outstanding
-rendered RSS release gate.
+remain independent. The final `5080241` build passed Ubuntu and macOS pixel review, native
+attention/transport checks, container validation and CI. PR #8 was merged into `main` on November 7
+as development integration at the owner's explicit request. Its short 250-session CPU comparison
+still failed: +1.2050 percentage points against the unchanged +1.0 limit. The delayed comparison
+passed at +0.9999 points, with effectively no CPU margin; it does not override the short failure.
+Both RSS medians passed in that campaign. The package remains experimental and unpublished, with
+resource acceptance and execution correlation still open. See the exact
+[campaign record](sidebar-resource-benchmark.md#november-7-development-merge).
+
+The follow-up visual review distinguishes structural agreement from finishing the presentation. More
+legible one-cell Material pin/clock/trash glyphs and theme-derived secondary contrast are now
+implemented, with font-boundary and dark/light/custom-palette tests. Shared project-context labels
+and retry colors are memoized instead of recalculated per row. Native frame acceptance checks now
+also inspect the actual secondary-text/control colors and distinct pin/clock states. Candidate
+`b4eca46` passed Ubuntu/macOS pixel review, seven shared design checks, native interaction,
+attention/transport checks, container validation and CI. Its short 250-session CPU median still
+failed at +1.2124 points; delayed RSS/CPU medians passed. This does not establish stable resource
+acceptance. The [campaign record](sidebar-resource-benchmark.md#november-7-legibility-follow-up)
+retains both results and their exact bundle identity. The prior PR #9 candidate `852b140` passed
+functional and graphical checks but failed short 250-session RSS at +84.4258 MiB versus 64 MiB. Its
+passing delayed median did not cancel that failure; the diagnostic now distinguishes anonymous,
+file-backed and shared RSS using existing process reads.
+
+The subsequent viewport optimization computes compact subtree heights only for expanded roots,
+sharing descendants across overlapping open roots. At 250 flat sessions with the active leaf open,
+the deterministic child-lookup count falls from 500 to two; fully collapsed rows need none. Existing
+promoted-child geometry and deep iterative traversal are preserved. This reduces layout work and
+temporary allocations; it is not a demonstrated fix for process-wide idle CPU or RSS. Its native and
+resource validation must use its new bundle, not the preceding candidate's receipts.
 
 ## Required runtime scenarios
 
