@@ -2,6 +2,13 @@ name: Isolated steady acceptance
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/isolated-steady-acceptance.yml"
+      - "scripts/benchmark-sidebar-runtime.ts"
+      - "scripts/sidebar-resource-probe.ts"
+      - "scripts/lib/resource-acceptance.ts"
+      - "docs/validation/resource-acceptance-criteria.md"
 
 permissions:
   contents: read
@@ -12,6 +19,8 @@ concurrency:
 
 jobs:
   steady:
+    # The campaign runs only on an explicit dispatch; pull requests merely register the workflow.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
