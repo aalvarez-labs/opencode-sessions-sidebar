@@ -2,8 +2,8 @@
 
 > **Superseded on 2026-11-20.** The acceptance method now lives in
 > [`resource-acceptance-criteria.md`](./resource-acceptance-criteria.md) and
-> [`ADR-0001`](../adr/ADR-0001-resource-acceptance-windows.md). This diagnostic remains the
-> evidence that produced that decision; its own veredict is no longer the acceptance gate.
+> [`ADR-0001`](../adr/ADR-0001-resource-acceptance-windows.md). This diagnostic remains the evidence
+> that produced that decision; its own veredict is no longer the acceptance gate.
 
 This document declares, before any measured run, how the idle steady-state diagnostic is
 interpreted. It is committed together with the harness and is not edited afterwards without a

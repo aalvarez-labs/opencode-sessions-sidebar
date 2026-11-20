@@ -16,8 +16,8 @@ the one-point budget, so a three-pair median is a coin flip. The 25-session memo
 negative, `-68` and `-81` MiB, which is noise larger than the claimed cost.
 
 A phase diagnostic on separate processes showed two controls differing by 100.34 MiB, of which
-100.32 MiB was anonymous memory owned by the allocator rather than the product. Budgeting
-`RssAnon` instead of `RSS` was therefore rejected: it carries the same noise.
+100.32 MiB was anonymous memory owned by the allocator rather than the product. Budgeting `RssAnon`
+instead of `RSS` was therefore rejected: it carries the same noise.
 
 A steady-state attribution run (ten pairs, eight evaluable, no injected events, thirty-second
 settle, seventy-second observation) put sustained CPU at `+0.136` points with an IQR of `0.142`, a
@@ -27,8 +27,8 @@ percent of a core for the control and 265 percent for the product, the settle de
 
 ## Decision
 
-- Budget memory at the named `ready` checkpoint, sampled immediately after the TUI reports
-  readiness and before the settle begins.
+- Budget memory at the named `ready` checkpoint, sampled immediately after the TUI reports readiness
+  and before the settle begins.
 - Budget CPU over a seventy-second steady window that follows a thirty-second settle, at 250
   sessions, with ten pairs, two warm-up pairs discarded, leaving eight evaluable pairs. Arms run
   sequentially and alternate order per repetition.
@@ -64,5 +64,5 @@ separates signal from noise with an explicit band.
 
 - Keep the short gate and pursue a product fix: the dominant cost is the host's native mount, paid
   by both arms, and no product-side change removes it without changing the host.
-- Budget `RssAnon` instead of `RSS`: rejected because the control-to-control spread is anonymous,
-  so it moves the noise rather than removing it.
+- Budget `RssAnon` instead of `RSS`: rejected because the control-to-control spread is anonymous, so
+  it moves the noise rather than removing it.
