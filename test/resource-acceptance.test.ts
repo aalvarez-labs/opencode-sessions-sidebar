@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  assessResourceWindow,
-  type ResourcePairSample,
-} from "../scripts/lib/resource-acceptance";
+import { assessResourceWindow, type ResourcePairSample } from "../scripts/lib/resource-acceptance";
 
 const criteria = {
   budgetRssMiB: 64,
