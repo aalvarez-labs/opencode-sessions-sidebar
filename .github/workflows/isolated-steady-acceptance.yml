@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       pairs:
-        description: "Paired repetitions for the steady window (10, or 16 for the single pre-registered extension)"
+        description:
+          "Paired repetitions for the steady window (10, or 16 for the single pre-registered
+          extension)"
         required: false
         default: "10"
   pull_request:
