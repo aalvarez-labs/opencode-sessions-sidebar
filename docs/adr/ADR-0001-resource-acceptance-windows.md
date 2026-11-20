@@ -73,16 +73,15 @@ The steady window ran twice on GitHub-hosted runners, first with the ten pre-reg
 then with the single pre-registered extension to sixteen pairs. CPU passed in both, at a median
 paired increase of +0.0286 and +0.0073 points against a budget of one point. Resident memory was
 inconclusive in both: the median paired increase stayed at about 45 MiB, inside the 64 MiB budget,
-while the interquartile range of the paired difference exceeded the budget and grew with the
-sample, from 71.11 to 107.81 MiB.
+while the interquartile range of the paired difference exceeded the budget and grew with the sample,
+from 71.11 to 107.81 MiB.
 
-That outcome exposes a limit of this decision rather than of the product. The CPU half of the
-steady window works as intended, because the paired CPU difference is small and repeatable. The
-memory half inherits a whole-process baseline near 700 MiB whose per-arm spread is about 130 MiB,
-which puts the paired difference's spread above the budget. A robust interquartile range is
-insensitive to sample size, so this is not a power problem that more pairs can fix: the instrument
-as specified cannot resolve 64 MiB at this baseline, and it can only report that no failure was
-demonstrated.
+That outcome exposes a limit of this decision rather than of the product. The CPU half of the steady
+window works as intended, because the paired CPU difference is small and repeatable. The memory half
+inherits a whole-process baseline near 700 MiB whose per-arm spread is about 130 MiB, which puts the
+paired difference's spread above the budget. A robust interquartile range is insensitive to sample
+size, so this is not a power problem that more pairs can fix: the instrument as specified cannot
+resolve 64 MiB at this baseline, and it can only report that no failure was demonstrated.
 
 The pre-registered extension is consumed and the criteria require stopping here. Choosing how the
 memory budget should be read is a method decision that this record does not take. The measured
