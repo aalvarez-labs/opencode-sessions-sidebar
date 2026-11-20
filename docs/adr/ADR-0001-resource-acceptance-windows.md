@@ -65,8 +65,11 @@ evaluable pairs, and it separates signal from noise with an explicit band.
 - Long-window resident memory is reported but unbudgeted; only monotonic growth escalates.
 - Automatic pull-request resource gating is now observational. The cold and delayed windows keep
   three pairs, below the five-pair minimum, so they can report a failure but can never pass, and
-  their workflow steps say so instead of claiming a budget decision. The window that decides the
-  budgets is the steady campaign, which is a manual dispatch and does not run on every pull request.
+  their workflow steps say so instead of claiming a budget decision. The sustained window keeps a
+  single pair and now reports its comparison instead of asserting it, while still enforcing the
+  behavioural invariant it exists for: three healthy requests spaced at least sixty seconds apart,
+  each under the two-second deadline. The window that decides the budgets is the steady campaign,
+  which is a manual dispatch and does not run on every pull request.
 - The steady window measures 250 sessions only, so smaller lists rely on the recorded cold window
   for observation rather than acceptance.
 

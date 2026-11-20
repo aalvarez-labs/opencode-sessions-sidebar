@@ -132,6 +132,21 @@ Any future memory gate must therefore name its settle time as part of the criter
 does not fix the settle time will keep flipping between roughly +80, roughly zero and roughly +45
 MiB on the same product bytes.
 
+### The sustained window stopped asserting a budget
+
+The first pull request run under the new rule
+([`44837313138`](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44837313138))
+failed for a reason worth keeping: the sustained script asserted a budget from a **single pair**, and
+that pair reported +168.5391 MiB at the end of a 210-second observation, so the assertion threw. The
+same code passed the identical gate an hour earlier, which is the same flakiness this record is
+about, one measurement deep instead of three.
+
+`scripts/benchmark-sidebar-sustained.ts` now records `referenceBudgetsMet` as an observation with a
+`referenceBudgetNote` explaining that one pair cannot pass or fail a budget, and keeps the assertions
+that are genuine invariants: three completed health requests inside the window, each healthy, each
+under the two-second deadline, spaced at least sixty seconds apart. That is what the window exists
+to prove, and it is unaffected by allocator noise.
+
 ## Open decision
 
 The resident-memory gate needs one of three treatments, and none of them can be chosen silently:

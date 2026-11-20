@@ -117,10 +117,13 @@ try {
   summary.health = receipt;
   summary.healthCallsInWindow = calls.length;
   summary.results = result.results;
+  // A single pair cannot carry a budget verdict, so this window reports the comparison and refers
+  // the decision to the steady campaign. See docs/validation/resource-acceptance-criteria.md.
   const delta = result.results[0];
   summary.referenceBudgetsMet = delta.medianRssDeltaMiB <= 64 && delta.medianCpuDeltaPoints <= 1;
+  summary.referenceBudgetNote =
+    "Reported only: one pair is below the five-pair minimum, so this window can neither pass nor fail a budget.";
   summary.completed = true;
-  assert(summary.referenceBudgetsMet, "Sustained observation exceeded original reference budgets.");
 } catch (error) {
   summary.failure = String(error);
   throw error;

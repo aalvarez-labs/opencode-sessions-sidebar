@@ -154,7 +154,7 @@ jobs:
           SIDEBAR_RESOURCE_REPORT:
             ${{ github.workspace }}/.sidebar-lab/actions/native/resources.json
         run: bun run benchmark:sidebar:runtime
-      - name: Sustained idle covering three real health requests
+      - name: Sustained idle health cadence (reported; budgets are decided by the steady campaign)
         id: diagnostic
         continue-on-error: true
         env:
