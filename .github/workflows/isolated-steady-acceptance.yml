@@ -2,6 +2,11 @@ name: Isolated steady acceptance
 
 on:
   workflow_dispatch:
+    inputs:
+      pairs:
+        description: "Paired repetitions for the steady window (10, or 16 for the single pre-registered extension)"
+        required: false
+        default: "10"
   pull_request:
     paths:
       - ".github/workflows/isolated-steady-acceptance.yml"
@@ -42,6 +47,7 @@ jobs:
       - name: Measure the authoritative steady window against a symmetric control
         env:
           SIDEBAR_RESOURCE_STEADY: "true"
+          SIDEBAR_RESOURCE_STEADY_PAIRS: ${{ inputs.pairs || '10' }}
           SIDEBAR_RESOURCE_REPORT: ${{ github.workspace }}/.sidebar-lab/steady/resources.json
           SIDEBAR_TEST_OPENCODE_VERSION: "1.18.30"
         run: bun run benchmark:sidebar:runtime

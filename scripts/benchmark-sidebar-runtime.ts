@@ -48,7 +48,14 @@ assert(
   "Choose steady acceptance or a legacy resource mode, not both.",
 );
 const sizes = steady ? [250] : diagnostic || delayed ? [250] : [25, 250];
-const repetitions = steady ? 10 : diagnostic ? 1 : 3;
+// La ventana autoritativa admite una única extensión pre-registrada (10 -> 16 pares) cuando el
+// primer veredicto es INCONCLUSIVE; el valor llega por entorno para no tocar el código.
+const steadyPairs = steady ? Number(process.env.SIDEBAR_RESOURCE_STEADY_PAIRS ?? "") || 10 : 0;
+assert(
+  !steady || (Number.isInteger(steadyPairs) && steadyPairs >= 2),
+  "SIDEBAR_RESOURCE_STEADY_PAIRS must be an integer of at least 2.",
+);
+const repetitions = steady ? steadyPairs : diagnostic ? 1 : 3;
 const settleMs = steady ? 30_000 : delayed || sustained ? 20_000 : 2_000;
 const observationMs = steady
   ? 70_000
@@ -70,9 +77,9 @@ const watchdog = setTimeout(
     lifetime.abort(new Error("Rendered resource comparison exceeded its bounded watchdog."));
     for (const child of children) child.kill("SIGKILL");
   },
-  // The steady campaign runs 20 sequential arms of roughly 105 s each, so the whole-run watchdog
-  // must cover the full campaign, not one arm; a per-arm limit lives in the probe timeout.
-  steady ? 3_300_000 : sustained ? 600_000 : 360_000,
+  // The steady campaign runs two sequential arms of roughly 105 s per pair, so the whole-run
+  // watchdog must cover every pair, not one arm; a per-arm limit lives in the probe timeout.
+  steady ? 260_000 * steadyPairs : sustained ? 600_000 : 360_000,
 );
 
 function environment(config: string, data: string, label: string) {
@@ -575,6 +582,7 @@ try {
       budgetedMemory: "rssReady",
       medianRssReadyDeltaMiB: assessment.rssReady.median,
       rssReadyIqrMiB: assessment.rssReady.iqr,
+      cpuMedianPoints: assessment.cpu.median,
       cpuIqrPoints: assessment.cpu.iqr,
       rssEndDriftMiB: assessment.rssEndDrift.median,
       verdict: assessment.verdict,
