@@ -70,7 +70,9 @@ const watchdog = setTimeout(
     lifetime.abort(new Error("Rendered resource comparison exceeded its bounded watchdog."));
     for (const child of children) child.kill("SIGKILL");
   },
-  steady ? 300_000 : sustained ? 600_000 : 360_000,
+  // The steady campaign runs 20 sequential arms of roughly 105 s each, so the whole-run watchdog
+  // must cover the full campaign, not one arm; a per-arm limit lives in the probe timeout.
+  steady ? 3_300_000 : sustained ? 600_000 : 360_000,
 );
 
 function environment(config: string, data: string, label: string) {

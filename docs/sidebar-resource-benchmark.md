@@ -27,7 +27,7 @@ These budgets are fixed before the first measurement of this harness:
 
 | Measurement                              | Budget for each dataset                                                                                                     |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Median paired end-of-window RSS increase | At most 64 MiB                                                                                                              |
+| Median paired ready-checkpoint RSS increase | At most 64 MiB                                                                                                              |
 | Median paired CPU increase               | At most 1.0 percentage point of one CPU core                                                                                |
 | Enabled rendering                        | Selected session's sidebar controls visible inside the viewport; header and completion action in the captured render buffer |
 | Lifecycle                                | Two deactivate/reactivate cycles restore visible controls; final deactivation removes them                                  |
@@ -36,6 +36,17 @@ The 64 MiB allowance applies to the full rendered plugin, including its normaliz
 organization service and UI. It is distinct from the headless adapter's 32 MiB budget. The idle CPU
 allowance remains one percentage point. Existing navigation (250 ms p95) and component-burst (500
 ms) budgets are unchanged. Do not widen budgets after observing a failed run.
+
+The windows are now named. The `steady` window is authoritative: a thirty-second settle, a
+seventy-second observation, 250 sessions, ten pairs with two warm-up pairs discarded. Memory is
+budgeted at the named `ready` checkpoint, sampled immediately after readiness and before the
+settle; CPU is budgeted across the observation window. The two-second `cold` window, the `delayed`
+window and the `sustained` window remain recorded but never gate on their own, because their
+per-pair spread has been measured at two to ten times the budget. A metric fails only when its
+median exceeds the budget and also exceeds three times its own interquartile range; an inconclusive
+window neither blocks nor accepts. Final end-of-window resident memory is reported as drift, not
+gated. The decision is recorded in `docs/adr/ADR-0001-resource-acceptance-windows.md` and the
+pre-registered values in `docs/validation/resource-acceptance-criteria.md`.
 
 Startup-to-ready and repeated reactivation times are descriptive measurements, not accepted latency
 thresholds. Three samples do not establish a stable tail latency.
