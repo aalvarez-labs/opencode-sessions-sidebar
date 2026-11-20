@@ -74,9 +74,11 @@ method decision to the user rather than to keep drawing campaigns.
 
 ### Boot to ready
 
-Across the evaluable extension pairs the product arm reached the ready checkpoint in 2865 to 3274 ms
-and the control arm in 2741 to 3094 ms, so the product adds roughly 90 to 180 ms to a start-up that
-already spends about three seconds in the host. The activation budget was measured separately by the
+The paired difference from control to product at the ready checkpoint has a median of 194.6 ms in
+the first campaign (range −73.9 to +323.6 ms) and 174.9 ms in the extension campaign (range −122.0
+to +461.9 ms). The product therefore tends to report ready a fifth of a second later, on a start-up
+that already spends about three seconds in the host, and the spread across pairs is wider than the
+median itself, so no single pair is meaningful. The activation budget was measured separately by the
 headless adapter benchmark, where activation p95 was 185 to 203 ms against a 500 ms budget, and this
 window does not contradict it.
 
