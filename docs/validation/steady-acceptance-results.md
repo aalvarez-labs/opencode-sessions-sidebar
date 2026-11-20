@@ -104,6 +104,31 @@ window does not contradict it.
   that the short window's CPU verdict is dominated by the host's start-up burst, since the same
   product bytes produced +1.1992 and −5.6037 points in two campaigns.
 
+## Gate reports under the new rule
+
+The pull-request resource steps now report instead of deciding. Run
+[`44834385248`](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44834385248) at commit `e31053d`
+passed the native job, and the reason matters: every window returned `INCONCLUSIVE`, not `PASS`. Three pairs are
+below the five-pair minimum, so no window can pass, and the final gate now only requires that nothing failed.
+
+| Window (artifact `native-transport-resources`) | Sessions | Settle / observe | Median budgeted delta | IQR | Verdict |
+| --- | ---: | --- | ---: | ---: | --- |
+| Cold, `rssReady` | 25 | 2 s / 5 s | +48.8672 MiB | 51.2617 | INCONCLUSIVE |
+| Cold, `rssReady` | 250 | 2 s / 5 s | +80.4805 MiB | 21.0391 | INCONCLUSIVE |
+| Delayed, `rssEnd` | 250 | 20 s / 10 s | −8.6055 MiB | 50.7188 | INCONCLUSIVE |
+| Sustained, `rssReady` (one pair) | 250 | 20 s / 210 s | +178.3945 MiB | — | INCONCLUSIVE |
+
+The cold 250-session pair satisfies both halves of the failure rule on its own, median above the 64 MiB budget and
+above three interquartile ranges, and still returns `INCONCLUSIVE` because three pairs cannot carry a verdict. That
+is the rule working as pre-registered, and it is also the honest reading of this record: the resident-memory signal
+is present, positive and small-variance at a two-second settle, and it decays as settling time grows, reaching about
+zero at a twenty-second settle with a ten-second observation. The authoritative window sits in between, with a
+thirty-second settle over eight and fourteen pairs, and lands inside the budget on the median with an interquartile
+range above it.
+
+Any future memory gate must therefore name its settle time as part of the criterion. A budget that does not fix the
+settle time will keep flipping between roughly +80, roughly zero and roughly +45 MiB on the same product bytes.
+
 ## Open decision
 
 The resident-memory gate needs one of three treatments, and none of them can be chosen silently:
