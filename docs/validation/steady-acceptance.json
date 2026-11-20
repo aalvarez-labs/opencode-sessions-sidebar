@@ -1,0 +1,427 @@
+{
+  "schema": 1,
+  "kind": "steady-acceptance-campaigns",
+  "recorded": "2026-11-20",
+  "pullRequest": 9,
+  "branch": "perf/idle-render-20261107",
+  "v1Accepted": false,
+  "criteria": "docs/validation/resource-acceptance-criteria.md",
+  "decisionRecord": "docs/adr/ADR-0001-resource-acceptance-windows.md",
+  "budgets": {
+    "rssReadyDeltaMiB": 64,
+    "cpuDeltaPoints": 1.0,
+    "signalIqrMultiple": 3,
+    "minEvaluablePairs": 5
+  },
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "kernel": "7.0.0-1014-aws",
+    "cpuModel": "Intel(R) Xeon(R) 6975P-C",
+    "visibleLogicalCpus": 4,
+    "visibleMemoryGiB": 15.333580017089844,
+    "bun": "1.3.14",
+    "opencode": "1.18.30",
+    "terminal": "Bun POSIX PTY, xterm-256color, 140x40",
+    "sizes": [250],
+    "repetitions": 10,
+    "settleMs": 30000,
+    "observationMs": 70000,
+    "measurementProtocol": "append-receipt-v2",
+    "diagnosticIntervalMs": null,
+    "clockTicks": 100,
+    "pageSize": 4096,
+    "icons": "ascii",
+    "density": "balanced",
+    "reducedMotion": false,
+    "extensions": [],
+    "cache": "Fresh copied data, per-treatment cache; warm OS filesystem cache is not flushed."
+  },
+  "campaigns": [
+    {
+      "label": "initial-10-pairs",
+      "runId": 44696780544,
+      "runUrl": "https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44696780544",
+      "sourceCommit": "923acc59a82e71e66cc166a3b91eb10e09afc819",
+      "runtimePluginSha256": "4ba1671d7074735ebb604f41be2b8a3ef2064db5d51c4b19c6a1a52f96899b57",
+      "window": {
+        "name": "steady",
+        "settleMs": 30000,
+        "observationMs": 70000,
+        "sessions": 250,
+        "pairedRepetitions": 10
+      },
+      "evaluablePairs": 8,
+      "warmupDiscarded": [1, 2],
+      "droppedPairs": [],
+      "verdict": "INCONCLUSIVE",
+      "blocking": false,
+      "passed": false,
+      "cpuPoints": {
+        "median": 0.0286,
+        "iqr": 0.2215,
+        "budget": 1.0,
+        "assessment": "PASS"
+      },
+      "rssReadyMiB": {
+        "median": 45.4961,
+        "iqr": 71.1084,
+        "budget": 64,
+        "assessment": "INCONCLUSIVE"
+      },
+      "rssEndMiB": {
+        "median": -2.0,
+        "iqr": 129.8008,
+        "budgeted": false,
+        "note": "Reported as drift, computed over evaluable pairs with the same linear quantile as every other median in this record."
+      },
+      "bootToReadyMs": {
+        "productRange": [2947.5, 3168.6],
+        "controlRange": [2777.1, 3021.4]
+      },
+      "pairs": [
+        {
+          "repetition": 1,
+          "rssReadyDeltaMiB": 122.8203,
+          "rssEndDeltaMiB": 165.6875,
+          "cpuPoints": 0.1001,
+          "productRssReadyMiB": 794.3281,
+          "controlRssReadyMiB": 671.5078,
+          "productBootToReadyMs": 3064.5,
+          "controlBootToReadyMs": 2757.1
+        },
+        {
+          "repetition": 2,
+          "rssReadyDeltaMiB": 103.3633,
+          "rssEndDeltaMiB": -55.9727,
+          "cpuPoints": 0.0571,
+          "productRssReadyMiB": 798.0156,
+          "controlRssReadyMiB": 694.6523,
+          "productBootToReadyMs": 3055.2,
+          "controlBootToReadyMs": 2866.6
+        },
+        {
+          "repetition": 3,
+          "rssReadyDeltaMiB": 75.9531,
+          "rssEndDeltaMiB": 81.418,
+          "cpuPoints": 0.0284,
+          "productRssReadyMiB": 791.5703,
+          "controlRssReadyMiB": 715.6172,
+          "productBootToReadyMs": 3058.4,
+          "controlBootToReadyMs": 2861.3
+        },
+        {
+          "repetition": 4,
+          "rssReadyDeltaMiB": 7.5508,
+          "rssEndDeltaMiB": 115.0938,
+          "cpuPoints": -0.1145,
+          "productRssReadyMiB": 790.5195,
+          "controlRssReadyMiB": 782.9688,
+          "productBootToReadyMs": 3074.6,
+          "controlBootToReadyMs": 2967.6
+        },
+        {
+          "repetition": 5,
+          "rssReadyDeltaMiB": -24.0195,
+          "rssEndDeltaMiB": 74.9766,
+          "cpuPoints": 0.0286,
+          "productRssReadyMiB": 767.8906,
+          "controlRssReadyMiB": 791.9102,
+          "productBootToReadyMs": 2947.5,
+          "controlBootToReadyMs": 3021.4
+        },
+        {
+          "repetition": 6,
+          "rssReadyDeltaMiB": 7.9609,
+          "rssEndDeltaMiB": -108.6758,
+          "cpuPoints": 0.4142,
+          "productRssReadyMiB": 787.3242,
+          "controlRssReadyMiB": 779.3633,
+          "productBootToReadyMs": 3103.9,
+          "controlBootToReadyMs": 2911.8
+        },
+        {
+          "repetition": 7,
+          "rssReadyDeltaMiB": 66.8398,
+          "rssEndDeltaMiB": -182.6328,
+          "cpuPoints": 0.2857,
+          "productRssReadyMiB": 796.8867,
+          "controlRssReadyMiB": 730.0469,
+          "productBootToReadyMs": 3142.3,
+          "controlBootToReadyMs": 2904.2
+        },
+        {
+          "repetition": 8,
+          "rssReadyDeltaMiB": 127.5312,
+          "rssEndDeltaMiB": -34.7266,
+          "cpuPoints": 0.0286,
+          "productRssReadyMiB": 802.1953,
+          "controlRssReadyMiB": 674.6641,
+          "productBootToReadyMs": 3100.7,
+          "controlBootToReadyMs": 2777.1
+        },
+        {
+          "repetition": 9,
+          "rssReadyDeltaMiB": 88.0078,
+          "rssEndDeltaMiB": 0.8906,
+          "cpuPoints": 0.2285,
+          "productRssReadyMiB": 854.5352,
+          "controlRssReadyMiB": 766.5273,
+          "productBootToReadyMs": 3168.6,
+          "controlBootToReadyMs": 2857.0
+        },
+        {
+          "repetition": 10,
+          "rssReadyDeltaMiB": 24.1523,
+          "rssEndDeltaMiB": -4.8906,
+          "cpuPoints": 0.0002,
+          "productRssReadyMiB": 799.1953,
+          "controlRssReadyMiB": 775.043,
+          "productBootToReadyMs": 3063.2,
+          "controlBootToReadyMs": 2975.0
+        }
+      ],
+      "readySpreadMiB": {
+        "product": 86.6446,
+        "control": 117.2461,
+        "note": "Per-arm spread of absolute resident memory at the ready checkpoint, over evaluable pairs. The paired difference inherits twice this spread, which is why its interquartile range exceeds the budget."
+      },
+      "bootToReadyDeltaMs": {
+        "median": 194.6,
+        "min": -73.9,
+        "max": 323.6,
+        "note": "Paired product-minus-control difference to the ready checkpoint; positive means the product reported ready later."
+      }
+    },
+    {
+      "label": "pre-registered-extension-16-pairs",
+      "runId": 44814989636,
+      "runUrl": "https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44814989636",
+      "sourceCommit": "c8cda879820ea44c67e9c0bb7c0fbbff133eee59",
+      "runtimePluginSha256": "4ba1671d7074735ebb604f41be2b8a3ef2064db5d51c4b19c6a1a52f96899b57",
+      "window": {
+        "name": "steady",
+        "settleMs": 30000,
+        "observationMs": 70000,
+        "sessions": 250,
+        "pairedRepetitions": 16
+      },
+      "evaluablePairs": 14,
+      "warmupDiscarded": [1, 2],
+      "droppedPairs": [],
+      "verdict": "INCONCLUSIVE",
+      "blocking": false,
+      "passed": false,
+      "cpuPoints": {
+        "median": 0.0073,
+        "iqr": 0.1571,
+        "budget": 1.0,
+        "assessment": "PASS"
+      },
+      "rssReadyMiB": {
+        "median": 44.6914,
+        "iqr": 107.8076,
+        "budget": 64,
+        "assessment": "INCONCLUSIVE"
+      },
+      "rssEndMiB": {
+        "median": 9.8223,
+        "iqr": 63.7392,
+        "budgeted": false,
+        "note": "Reported as drift, computed over evaluable pairs with the same linear quantile as every other median in this record."
+      },
+      "bootToReadyMs": {
+        "productRange": [2865.2, 3274.0],
+        "controlRange": [2740.8, 3093.9]
+      },
+      "pairs": [
+        {
+          "repetition": 1,
+          "rssReadyDeltaMiB": 61.0234,
+          "rssEndDeltaMiB": 105.8359,
+          "cpuPoints": -0.2428,
+          "productRssReadyMiB": 749.2578,
+          "controlRssReadyMiB": 688.2344,
+          "productBootToReadyMs": 2996.2,
+          "controlBootToReadyMs": 2972.4
+        },
+        {
+          "repetition": 2,
+          "rssReadyDeltaMiB": 87.5117,
+          "rssEndDeltaMiB": 157.2773,
+          "cpuPoints": -0.3999,
+          "productRssReadyMiB": 787.6523,
+          "controlRssReadyMiB": 700.1406,
+          "productBootToReadyMs": 3024.4,
+          "controlBootToReadyMs": 2808.8
+        },
+        {
+          "repetition": 3,
+          "rssReadyDeltaMiB": 41.918,
+          "rssEndDeltaMiB": 3.0859,
+          "cpuPoints": 0.0856,
+          "productRssReadyMiB": 806.5664,
+          "controlRssReadyMiB": 764.6484,
+          "productBootToReadyMs": 3144.9,
+          "controlBootToReadyMs": 2977.3
+        },
+        {
+          "repetition": 4,
+          "rssReadyDeltaMiB": -57.4531,
+          "rssEndDeltaMiB": 50.375,
+          "cpuPoints": -0.0857,
+          "productRssReadyMiB": 715.5078,
+          "controlRssReadyMiB": 772.9609,
+          "productBootToReadyMs": 2948.6,
+          "controlBootToReadyMs": 2994.2
+        },
+        {
+          "repetition": 5,
+          "rssReadyDeltaMiB": -80.3945,
+          "rssEndDeltaMiB": -20.0039,
+          "cpuPoints": -0.4571,
+          "productRssReadyMiB": 705.6797,
+          "controlRssReadyMiB": 786.0742,
+          "productBootToReadyMs": 2865.2,
+          "controlBootToReadyMs": 2987.2
+        },
+        {
+          "repetition": 6,
+          "rssReadyDeltaMiB": -76.8789,
+          "rssEndDeltaMiB": -0.6562,
+          "cpuPoints": 0.214,
+          "productRssReadyMiB": 730.9219,
+          "controlRssReadyMiB": 807.8008,
+          "productBootToReadyMs": 3103.0,
+          "controlBootToReadyMs": 2998.6
+        },
+        {
+          "repetition": 7,
+          "rssReadyDeltaMiB": 69.5742,
+          "rssEndDeltaMiB": 162.3867,
+          "cpuPoints": -0.2428,
+          "productRssReadyMiB": 773.7344,
+          "controlRssReadyMiB": 704.1602,
+          "productBootToReadyMs": 3129.2,
+          "controlBootToReadyMs": 2836.1
+        },
+        {
+          "repetition": 8,
+          "rssReadyDeltaMiB": 47.4648,
+          "rssEndDeltaMiB": 43.1641,
+          "cpuPoints": 0.0714,
+          "productRssReadyMiB": 753.9023,
+          "controlRssReadyMiB": 706.4375,
+          "productBootToReadyMs": 3087.0,
+          "controlBootToReadyMs": 2766.4
+        },
+        {
+          "repetition": 9,
+          "rssReadyDeltaMiB": 109.1523,
+          "rssEndDeltaMiB": 39.1719,
+          "cpuPoints": -0.0286,
+          "productRssReadyMiB": 803.1758,
+          "controlRssReadyMiB": 694.0234,
+          "productBootToReadyMs": 2973.8,
+          "controlBootToReadyMs": 2791.6
+        },
+        {
+          "repetition": 10,
+          "rssReadyDeltaMiB": 155.3398,
+          "rssEndDeltaMiB": 8.9883,
+          "cpuPoints": -0.0,
+          "productRssReadyMiB": 847.8633,
+          "controlRssReadyMiB": 692.5234,
+          "productBootToReadyMs": 3042.4,
+          "controlBootToReadyMs": 2740.8
+        },
+        {
+          "repetition": 11,
+          "rssReadyDeltaMiB": 41.3633,
+          "rssEndDeltaMiB": 10.6562,
+          "cpuPoints": 0.1,
+          "productRssReadyMiB": 780.043,
+          "controlRssReadyMiB": 738.6797,
+          "productBootToReadyMs": 2914.4,
+          "controlBootToReadyMs": 2957.2
+        },
+        {
+          "repetition": 12,
+          "rssReadyDeltaMiB": -34.8555,
+          "rssEndDeltaMiB": 140.0156,
+          "cpuPoints": -0.2998,
+          "productRssReadyMiB": 745.0273,
+          "controlRssReadyMiB": 779.8828,
+          "productBootToReadyMs": 3074.7,
+          "controlBootToReadyMs": 2986.1
+        },
+        {
+          "repetition": 13,
+          "rssReadyDeltaMiB": 88.7461,
+          "rssEndDeltaMiB": -42.9531,
+          "cpuPoints": 0.1286,
+          "productRssReadyMiB": 784.9922,
+          "controlRssReadyMiB": 696.2461,
+          "productBootToReadyMs": 3066.5,
+          "controlBootToReadyMs": 2871.6
+        },
+        {
+          "repetition": 14,
+          "rssReadyDeltaMiB": 169.9414,
+          "rssEndDeltaMiB": -30.6172,
+          "cpuPoints": 0.0145,
+          "productRssReadyMiB": 848.0938,
+          "controlRssReadyMiB": 678.1523,
+          "productBootToReadyMs": 3274.0,
+          "controlBootToReadyMs": 2812.1
+        },
+        {
+          "repetition": 15,
+          "rssReadyDeltaMiB": 86.6914,
+          "rssEndDeltaMiB": 50.4609,
+          "cpuPoints": 0.0857,
+          "productRssReadyMiB": 775.3398,
+          "controlRssReadyMiB": 688.6484,
+          "productBootToReadyMs": 3063.9,
+          "controlBootToReadyMs": 2813.1
+        },
+        {
+          "repetition": 16,
+          "rssReadyDeltaMiB": 26.2656,
+          "rssEndDeltaMiB": -188.4062,
+          "cpuPoints": -0.0144,
+          "productRssReadyMiB": 803.3203,
+          "controlRssReadyMiB": 777.0547,
+          "productBootToReadyMs": 3121.4,
+          "controlBootToReadyMs": 3093.9
+        }
+      ],
+      "readySpreadMiB": {
+        "product": 142.4141,
+        "control": 129.6485,
+        "note": "Per-arm spread of absolute resident memory at the ready checkpoint, over evaluable pairs. The paired difference inherits twice this spread, which is why its interquartile range exceeds the budget."
+      },
+      "bootToReadyDeltaMs": {
+        "median": 174.9,
+        "min": -122.0,
+        "max": 461.9,
+        "note": "Paired product-minus-control difference to the ready checkpoint; positive means the product reported ready later."
+      }
+    }
+  ],
+  "conclusion": {
+    "cpu": "PASS in both campaigns; the median paired increase stays two orders of magnitude below the one-point budget and the interquartile range stays five to six times below it.",
+    "rss": "INCONCLUSIVE in both campaigns. The median paired ready-checkpoint increase is stable at roughly 45 MiB, inside the 64 MiB budget, but the interquartile range of the paired difference exceeds the budget because whole-process resident memory at a roughly 700 MiB baseline varies by about 130 MiB per arm across processes.",
+    "blocking": false,
+    "blockingMeaning": "No campaign produced a FAIL. INCONCLUSIVE neither blocks nor accepts: the measurement step exits successfully and only the workflow gate that requires PASS turns the run red.",
+    "instrumentLimit": "A robust interquartile range is insensitive to sample size, so adding pairs does not narrow the noise band. At this baseline the paired cross-process RSS instrument cannot resolve the 64 MiB budget under the pre-registered rule; the pre-registered single extension was consumed and the method decision is handed to the user.",
+    "productFootprintFromWithinProcessDiagnostics": "The activation-attribution and phase diagnostics measure the same product inside one host process, where import and activation deltas were 1.3 MiB and about 0 MiB respectively and the total stayed far below the budget.",
+    "rssEndDrift": "The end-of-window resident delta is reported as drift and is not budgeted; in these campaigns it moved between roughly -4 and +10 MiB at the median while individual pairs spanned hundreds of MiB.",
+    "checkpointEvidence": {
+      "source": "docs/validation/memory-phase-attribution.json and the phase artifact of run 42425416143",
+      "controlSpreadAtReadyMiB": 40.98,
+      "controlSpreadAt45sMiB": 100.34,
+      "notReplicated": "In these campaigns the per-arm control spread at the ready checkpoint was 117.25 and 129.65 MiB, so the quieter checkpoint reduced one component of drift but did not put the cross-process floor below the 64 MiB budget."
+    }
+  }
+}

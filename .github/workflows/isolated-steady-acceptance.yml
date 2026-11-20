@@ -1,0 +1,72 @@
+name: Isolated steady acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      pairs:
+        description:
+          "Paired repetitions for the steady window (10, or 16 for the single pre-registered
+          extension)"
+        required: false
+        default: "10"
+  pull_request:
+    paths:
+      - ".github/workflows/isolated-steady-acceptance.yml"
+      - "scripts/benchmark-sidebar-runtime.ts"
+      - "scripts/sidebar-resource-probe.ts"
+      - "scripts/lib/resource-acceptance.ts"
+      - "docs/validation/resource-acceptance-criteria.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-steady-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  steady:
+    # The campaign runs only on an explicit dispatch; pull requests merely register the workflow.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+      - name: Build with pinned tools and record the actual executable
+        run: |
+          npm install --prefix "$RUNNER_TEMP/sidebar-tools" --no-audit --no-fund opencode-ai@1.18.30
+          echo "OPENCODE_BIN=$RUNNER_TEMP/sidebar-tools/node_modules/.bin/opencode" >> "$GITHUB_ENV"
+          bun install --frozen-lockfile
+          bun run build
+          mkdir -p .sidebar-lab/steady
+          git rev-parse HEAD > .sidebar-lab/steady/checkout-sha.txt
+          uname -a > .sidebar-lab/steady/host.txt
+      - name: Measure the authoritative steady window against a symmetric control
+        env:
+          SIDEBAR_RESOURCE_STEADY: "true"
+          SIDEBAR_RESOURCE_STEADY_PAIRS: ${{ inputs.pairs || '10' }}
+          SIDEBAR_RESOURCE_REPORT: ${{ github.workspace }}/.sidebar-lab/steady/resources.json
+          SIDEBAR_TEST_OPENCODE_VERSION: "1.18.30"
+        run: bun run benchmark:sidebar:runtime
+      - name: Require every steady window to reach a passing verdict
+        if: always()
+        run: |
+          report="${SIDEBAR_RESOURCE_REPORT:-.sidebar-lab/steady/resources.json}"
+          if [ ! -f "$report" ]; then
+            echo "Missing steady acceptance report."
+            exit 1
+          fi
+          jq -e '.results | all(.verdict == "PASS")' "$report"
+      - name: Retain the steady acceptance report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: steady-acceptance
+          path: .sidebar-lab/steady/
+          if-no-files-found: warn
+          retention-days: 14

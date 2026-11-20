@@ -17,6 +17,22 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createOpencodeClient } from "@opencode-ai/sdk/v2";
 import type { ResourceProbeResult } from "./sidebar-resource-probe";
+import {
+  parseProcessMemoryStatus,
+  processMemoryFields,
+  type ProcessMemoryStatus,
+} from "./process-memory-diagnostic";
+import {
+  compareThreadSnapshots,
+  sampleThreads,
+  threadDiagnosticLimits,
+  type ThreadSnapshot,
+} from "./thread-cpu-diagnostic";
+import {
+  assessResourceWindow,
+  type BudgetedMemory,
+  type ResourcePairSample,
+} from "./lib/resource-acceptance";
 
 assert.equal(process.platform, "linux", "This comparison requires Linux /proc and a POSIX PTY.");
 assert.equal(Bun.version, "1.3.14", "Use pinned Bun 1.3.14.");
@@ -26,23 +42,60 @@ const repository = resolve(import.meta.dir, "..");
 const plugin = await realpath(process.env.SIDEBAR_PLUGIN_FILE ?? join(repository, "dist/tui.js"));
 // Fixed before measurement; independent of the narrower headless and navigation budgets.
 const budgets = { medianRssDeltaMiB: 64, medianCpuDeltaPoints: 1 };
-const diagnostic = process.env.SIDEBAR_RESOURCE_DIAGNOSTIC === "true";
+const sustained = process.env.SIDEBAR_RESOURCE_SUSTAINED === "true";
+const steady = process.env.SIDEBAR_RESOURCE_STEADY === "true";
+const diagnostic = sustained || process.env.SIDEBAR_RESOURCE_DIAGNOSTIC === "true";
 const delayed = process.env.SIDEBAR_RESOURCE_DELAYED === "true";
 assert(!(diagnostic && delayed), "Choose either diagnostic or delayed acceptance mode.");
-const sizes = diagnostic || delayed ? [250] : [25, 250];
-const repetitions = diagnostic ? 1 : 3;
-const settleMs = delayed ? 20_000 : 2_000;
-const observationMs = diagnostic ? 30_000 : delayed ? 10_000 : 5_000;
+assert(
+  !(steady && (diagnostic || delayed || sustained)),
+  "Choose steady acceptance or a legacy resource mode, not both.",
+);
+// The steady window is the authoritative one; the legacy modes stay observational, and their
+// names reach the report so a delayed run is never recorded as a cold one.
+const windowName = steady
+  ? "steady"
+  : sustained
+    ? "sustained"
+    : delayed
+      ? "delayed"
+      : diagnostic
+        ? "diagnostic"
+        : "cold";
+const sizes = steady ? [250] : diagnostic || delayed ? [250] : [25, 250];
+// La ventana autoritativa admite una única extensión pre-registrada (10 -> 16 pares) cuando el
+// primer veredicto es INCONCLUSIVE; el valor llega por entorno para no tocar el código.
+const steadyPairs = steady ? Number(process.env.SIDEBAR_RESOURCE_STEADY_PAIRS ?? "") || 10 : 0;
+assert(
+  !steady || (Number.isInteger(steadyPairs) && steadyPairs >= 2),
+  "SIDEBAR_RESOURCE_STEADY_PAIRS must be an integer of at least 2.",
+);
+const repetitions = steady ? steadyPairs : diagnostic ? 1 : 3;
+const settleMs = steady ? 30_000 : delayed || sustained ? 20_000 : 2_000;
+const observationMs = steady
+  ? 70_000
+  : sustained
+    ? 210_000
+    : diagnostic
+      ? 30_000
+      : delayed
+        ? 10_000
+        : 5_000;
 const root = await mkdtemp(join(tmpdir(), "sidebar-rendered-resources-"));
 const project = join(root, "project");
 const seedConfig = join(root, "seed-config");
 const seedData = join(root, "seed-data");
 const children = new Set<ReturnType<typeof Bun.spawn>>();
 const lifetime = new AbortController();
-const watchdog = setTimeout(() => {
-  lifetime.abort(new Error("Rendered resource comparison exceeded six minutes."));
-  for (const child of children) child.kill("SIGKILL");
-}, 360_000);
+const watchdog = setTimeout(
+  () => {
+    lifetime.abort(new Error("Rendered resource comparison exceeded its bounded watchdog."));
+    for (const child of children) child.kill("SIGKILL");
+  },
+  // The steady campaign runs two sequential arms of roughly 105 s per pair, so the whole-run
+  // watchdog must cover every pair, not one arm; a per-arm limit lives in the probe timeout.
+  steady ? 260_000 * steadyPairs : sustained ? 600_000 : 360_000,
+);
 
 function environment(config: string, data: string, label: string) {
   return {
@@ -100,7 +153,14 @@ async function stop(child: ReturnType<typeof Bun.spawn>) {
 }
 
 async function hashes() {
-  const paths = ["scripts/benchmark-sidebar-runtime.ts", "scripts/sidebar-resource-probe.ts"];
+  const paths = [
+    "scripts/benchmark-sidebar-runtime.ts",
+    "scripts/sidebar-resource-probe.ts",
+    "scripts/thread-cpu-diagnostic.ts",
+    "scripts/process-memory-diagnostic.ts",
+    "scripts/lib/resource-acceptance.ts",
+    "scripts/lib/memory-deltas.ts",
+  ];
   async function visit(directory: string) {
     for (const entry of await readdir(join(repository, directory), { withFileTypes: true })) {
       const path = `${directory}/${entry.name}`;
@@ -135,7 +195,12 @@ async function sample(pid: number, pageSize: number) {
     Number(status.match(/^voluntary_ctxt_switches:\s+(\d+)/m)?.[1]) +
     Number(status.match(/^nonvoluntary_ctxt_switches:\s+(\d+)/m)?.[1]);
   assert([ticks, rssMiB, switches].every(Number.isFinite), "Invalid process counters.");
-  return { ticks, rssMiB, switches };
+  return {
+    ticks,
+    rssMiB,
+    switches,
+    ...(diagnostic ? { memory: parseProcessMemoryStatus(status) } : {}),
+  };
 }
 
 interface Measurement {
@@ -144,8 +209,10 @@ interface Measurement {
   enabled: boolean;
   bootToRenderedReadyMs: number;
   observationMs: number;
+  observationStartedEpochMs?: number;
   cpuPercent: number;
   rssStartMiB: number;
+  rssReadyMiB: number;
   rssEndMiB: number;
   mainThreadContextSwitches: number;
   readyToObservationMs: number;
@@ -155,6 +222,9 @@ interface Measurement {
     cpuPercent: number | null;
     rssMiB: number;
     mainThreadContextSwitches: number;
+    threads: ThreadSnapshot;
+    memory: ProcessMemoryStatus;
+    threadCpu?: ReturnType<typeof compareThreadSnapshots>;
   }[];
   lifecycleStatus: "pending" | "passed" | "failed";
   probe?: ResourceProbeResult;
@@ -165,11 +235,13 @@ const median = (values: number[]) =>
   [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]!;
 const report: Record<string, unknown> = {
   schema: 3,
-  kind: diagnostic
-    ? "diagnostic-time-series"
-    : delayed
-      ? "delayed-acceptance-comparison"
-      : "acceptance-comparison",
+  kind: sustained
+    ? "sustained-health-observation"
+    : diagnostic
+      ? "diagnostic-time-series"
+      : delayed
+        ? "delayed-acceptance-comparison"
+        : "acceptance-comparison",
   acceptanceEvaluated: false,
   completed: false,
   ...(diagnostic ? {} : { passed: false }),
@@ -234,6 +306,24 @@ try {
     observationMs,
     measurementProtocol: "append-receipt-v2",
     diagnosticIntervalMs: diagnostic ? 1_000 : null,
+    ...(diagnostic
+      ? {
+          threadDiagnostic: {
+            ...threadDiagnosticLimits,
+            intervalTiming:
+              "Midpoints of non-atomic thread snapshots; offset from process samples.",
+            scope:
+              "Matched TID/start-time identities only; transient or unreadable threads can be missed.",
+            overhead:
+              "Parent reads task stat files once per second; profiled results are not acceptance evidence.",
+          },
+          memoryDiagnostic: {
+            fields: processMemoryFields,
+            source: "Existing process status read; no additional filesystem reads.",
+            scope: "Process memory categories, not attribution to a plugin, worker or allocation.",
+          },
+        }
+      : {}),
     clockTicks,
     pageSize,
     icons: "ascii",
@@ -329,7 +419,9 @@ try {
             SIDEBAR_RESOURCE_DIRECTORY: project,
             SIDEBAR_RESOURCE_SESSION: selectedSession,
             SIDEBAR_RESOURCE_ENABLED: String(enabled),
+            SIDEBAR_RESOURCE_SUSTAINED: String(sustained),
             SIDEBAR_RESOURCE_SESSIONS: String(size),
+            SIDEBAR_RESOURCE_PROBE_TIMEOUT_MS: steady ? "150000" : "",
           },
           terminal: {
             cols: 140,
@@ -361,42 +453,55 @@ try {
         };
         assert.equal(ready.pid, tui.pid);
         assert.equal(ready.measurementProtocol, "append-receipt-v2");
+        const readySample = await sample(ready.procPid, pageSize);
         await Bun.sleep(settleMs);
         const started = performance.now();
         const before = await sample(ready.procPid, pageSize);
         let after = before;
+        let diagnosticFinishedAt: number | undefined;
         const trace: NonNullable<Measurement["trace"]> = [];
         if (diagnostic) {
+          assert(before.memory, "Missing diagnostic memory counters.");
           let previous = before;
           let previousAt = performance.now();
+          let previousThreads = await sampleThreads(ready.procPid, started);
           trace.push({
             elapsedMs: previousAt - started,
             intervalMs: 0,
             cpuPercent: null,
             rssMiB: before.rssMiB,
             mainThreadContextSwitches: 0,
+            threads: previousThreads,
+            memory: before.memory,
           });
-          for (let index = 0; index < 30; index++) {
+          for (let index = 0; index < observationMs / 1_000; index++) {
             lifetime.signal.throwIfAborted();
             await Bun.sleep(1_000);
             after = await sample(ready.procPid, pageSize);
             const now = performance.now();
+            diagnosticFinishedAt = now;
             const intervalMs = now - previousAt;
+            const threads = await sampleThreads(ready.procPid, started);
+            assert(after.memory, "Missing diagnostic memory counters.");
             trace.push({
               elapsedMs: now - started,
               intervalMs,
               cpuPercent: (((after.ticks - previous.ticks) / clockTicks) * 100_000) / intervalMs,
               rssMiB: after.rssMiB,
               mainThreadContextSwitches: after.switches - previous.switches,
+              threads,
+              memory: after.memory,
+              threadCpu: compareThreadSnapshots(previousThreads, threads, clockTicks),
             });
             previous = after;
             previousAt = now;
+            previousThreads = threads;
           }
         } else {
           await Bun.sleep(observationMs);
           after = await sample(ready.procPid, pageSize);
         }
-        const actualMs = performance.now() - started;
+        const actualMs = (diagnosticFinishedAt ?? performance.now()) - started;
         assert(
           !(await Bun.file(`${output}.lifecycle-started`).exists()) &&
             !(await Bun.file(output).exists()),
@@ -408,8 +513,10 @@ try {
           enabled,
           bootToRenderedReadyMs,
           observationMs: actualMs,
+          ...(sustained ? { observationStartedEpochMs: performance.timeOrigin + started } : {}),
           cpuPercent: (((after.ticks - before.ticks) / clockTicks) * 100_000) / actualMs,
           rssStartMiB: before.rssMiB,
+          rssReadyMiB: readySample.rssMiB,
           rssEndMiB: after.rssMiB,
           mainThreadContextSwitches: after.switches - before.switches,
           readyToObservationMs: started - readyReceivedAt,
@@ -454,7 +561,7 @@ try {
   );
   const results = sizes.map((sessions) => {
     const selected = measurements.filter((item) => item.sessions === sessions);
-    const deltas = selected
+    const pairs: ResourcePairSample[] = selected
       .filter((item) => item.enabled)
       .map((item) => {
         const baseline = selected.find(
@@ -463,10 +570,28 @@ try {
         assert(baseline);
         return {
           repetition: item.repetition,
-          rssMiB: item.rssEndMiB - baseline.rssEndMiB,
+          rssReadyDeltaMiB: item.rssReadyMiB - baseline.rssReadyMiB,
+          rssEndDeltaMiB: item.rssEndMiB - baseline.rssEndMiB,
           cpuPoints: item.cpuPercent - baseline.cpuPercent,
         };
       });
+    const deltas = pairs.map((pair) => ({
+      repetition: pair.repetition,
+      rssMiB: pair.rssEndDeltaMiB,
+      cpuPoints: pair.cpuPoints,
+    }));
+    const budgetedMemory: BudgetedMemory = delayed ? "rssEnd" : "rssReady";
+    const assessment = assessResourceWindow(
+      pairs,
+      steady ? 2 : 0,
+      {
+        budgetRssMiB: budgets.medianRssDeltaMiB,
+        budgetCpuPoints: budgets.medianCpuDeltaPoints,
+        signalIqrMultiple: 3,
+        minEvaluablePairs: 5,
+      },
+      budgetedMemory,
+    );
     const medianRssDeltaMiB = median(deltas.map((delta) => delta.rssMiB));
     const medianCpuDeltaPoints = median(deltas.map((delta) => delta.cpuPoints));
     return {
@@ -474,19 +599,30 @@ try {
       deltas,
       medianRssDeltaMiB,
       medianCpuDeltaPoints,
-      ...(diagnostic
-        ? {}
-        : {
-            passed:
-              medianRssDeltaMiB <= budgets.medianRssDeltaMiB &&
-              medianCpuDeltaPoints <= budgets.medianCpuDeltaPoints,
-          }),
+      window: { name: windowName, settleMs, observationMs },
+      budgetedMemory,
+      medianBudgetedRssDeltaMiB: assessment.rss.median,
+      budgetedRssIqrMiB: assessment.rss.iqr,
+      medianRssReadyDeltaMiB: assessment.rssReady.median,
+      rssReadyIqrMiB: assessment.rssReady.iqr,
+      cpuMedianPoints: assessment.cpu.median,
+      cpuIqrPoints: assessment.cpu.iqr,
+      rssEndDriftMiB: assessment.rssEndDrift.median,
+      verdict: assessment.verdict,
+      blocking: assessment.verdict.startsWith("FAIL"),
+      evaluablePairs: assessment.evaluablePairs,
+      warmupDiscarded: assessment.warmupDiscarded,
+      droppedPairs: assessment.droppedPairs,
+      ...(diagnostic ? {} : { passed: assessment.verdict === "PASS" }),
     };
   });
   report.results = results;
+  // Only the steady window is authoritative; every legacy mode reports without deciding.
+  report.authoritativeWindow = steady ? "steady" : "observational";
   if (!diagnostic) {
     report.acceptanceEvaluated = true;
-    report.passed = results.every((result) => result.passed);
+    report.passed = results.every((result) => result.passed === true);
+    report.blocking = results.some((result) => result.blocking === true);
   }
   report.completed = true;
   report.limitations = [
@@ -501,7 +637,10 @@ try {
   ];
   console.log(JSON.stringify({ kind: report.kind, results, passed: report.passed }));
   if (!diagnostic)
-    assert(report.passed, "Predeclared rendered-sidebar idle resource budgets did not all pass.");
+    assert(
+      !report.blocking,
+      "Predeclared rendered-sidebar idle resource budgets did not all pass.",
+    );
 } catch (error) {
   report.failure = error instanceof Error ? error.message : String(error);
   throw error;
