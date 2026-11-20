@@ -28,7 +28,11 @@ import {
   threadDiagnosticLimits,
   type ThreadSnapshot,
 } from "./thread-cpu-diagnostic";
-import { assessResourceWindow, type ResourcePairSample } from "./lib/resource-acceptance";
+import {
+  assessResourceWindow,
+  type BudgetedMemory,
+  type ResourcePairSample,
+} from "./lib/resource-acceptance";
 
 assert.equal(process.platform, "linux", "This comparison requires Linux /proc and a POSIX PTY.");
 assert.equal(Bun.version, "1.3.14", "Use pinned Bun 1.3.14.");
@@ -47,6 +51,17 @@ assert(
   !(steady && (diagnostic || delayed || sustained)),
   "Choose steady acceptance or a legacy resource mode, not both.",
 );
+// The steady window is the authoritative one; the legacy modes stay observational, and their
+// names reach the report so a delayed run is never recorded as a cold one.
+const windowName = steady
+  ? "steady"
+  : sustained
+    ? "sustained"
+    : delayed
+      ? "delayed"
+      : diagnostic
+        ? "diagnostic"
+        : "cold";
 const sizes = steady ? [250] : diagnostic || delayed ? [250] : [25, 250];
 // La ventana autoritativa admite una única extensión pre-registrada (10 -> 16 pares) cuando el
 // primer veredicto es INCONCLUSIVE; el valor llega por entorno para no tocar el código.
@@ -565,12 +580,18 @@ try {
       rssMiB: pair.rssEndDeltaMiB,
       cpuPoints: pair.cpuPoints,
     }));
-    const assessment = assessResourceWindow(pairs, steady ? 2 : 0, {
-      budgetRssMiB: budgets.medianRssDeltaMiB,
-      budgetCpuPoints: budgets.medianCpuDeltaPoints,
-      signalIqrMultiple: 3,
-      minEvaluablePairs: 5,
-    });
+    const budgetedMemory: BudgetedMemory = delayed ? "rssEnd" : "rssReady";
+    const assessment = assessResourceWindow(
+      pairs,
+      steady ? 2 : 0,
+      {
+        budgetRssMiB: budgets.medianRssDeltaMiB,
+        budgetCpuPoints: budgets.medianCpuDeltaPoints,
+        signalIqrMultiple: 3,
+        minEvaluablePairs: 5,
+      },
+      budgetedMemory,
+    );
     const medianRssDeltaMiB = median(deltas.map((delta) => delta.rssMiB));
     const medianCpuDeltaPoints = median(deltas.map((delta) => delta.cpuPoints));
     return {
@@ -578,8 +599,10 @@ try {
       deltas,
       medianRssDeltaMiB,
       medianCpuDeltaPoints,
-      window: { name: steady ? "steady" : "cold", settleMs, observationMs },
-      budgetedMemory: "rssReady",
+      window: { name: windowName, settleMs, observationMs },
+      budgetedMemory,
+      medianBudgetedRssDeltaMiB: assessment.rss.median,
+      budgetedRssIqrMiB: assessment.rss.iqr,
       medianRssReadyDeltaMiB: assessment.rssReady.median,
       rssReadyIqrMiB: assessment.rssReady.iqr,
       cpuMedianPoints: assessment.cpu.median,
@@ -594,7 +617,8 @@ try {
     };
   });
   report.results = results;
-  report.authoritativeWindow = steady ? "steady" : "cold";
+  // Only the steady window is authoritative; every legacy mode reports without deciding.
+  report.authoritativeWindow = steady ? "steady" : "observational";
   if (!diagnostic) {
     report.acceptanceEvaluated = true;
     report.passed = results.every((result) => result.passed === true);

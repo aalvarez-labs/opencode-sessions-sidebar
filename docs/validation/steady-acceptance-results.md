@@ -39,8 +39,9 @@ and still turn its workflow gate red, which is what both campaigns did.
 | Extension |              +0.0073 |              0.1571 |    1.0 | PASS       |
 
 The steady window is the authoritative one for CPU, and it passes in both campaigns with a wide
-margin: the median paired increase is between one and two hundredths of a point against a budget of
-one point, and the interquartile range is five to six times smaller than the budget. This replaces
+margin: the median paired increase is 0.0286 points in the first campaign and 0.0073 in the second,
+against a budget of one point, and the interquartile range is between four and a half and six and a
+half times smaller than the budget. This replaces
 the earlier claim that the idle cost was around 2.7 points per core. That number came from a
 campaign that injected twenty synthetic events and then measured the settle window those events
 created; with the burst removed the sustained cost is indistinguishable from the control.
@@ -65,6 +66,10 @@ about 250 MiB, which puts its interquartile range over 100 MiB.
 A robust interquartile range estimates the spread of the distribution and is insensitive to sample
 size, so neither sixteen pairs nor a larger campaign narrows the band under the pre-registered rule.
 The instrument, as specified, cannot resolve a 64 MiB difference at a baseline near 700 MiB. The
+ready checkpoint was chosen because the phase diagnostic measured a 40.98 MiB control-to-control
+spread there against 100.34 MiB at the forty-five-second mark, but those campaigns did not
+reproduce the quieter checkpoint, so the choice reduces one component of drift without moving the
+floor below the budget. The
 pre-registered extension is now consumed, and the criteria say to stop and hand the method decision
 to the user rather than to keep drawing campaigns.
 
@@ -92,8 +97,9 @@ window does not contradict it.
   regression larger than its own noise band, and the noise band is larger than the budget.
 - It does not cover leak-shaped behaviour. The steady window observes 70 s of idle with no activity;
   monotonic growth under sustained event traffic is outside it.
-- It does not replace a memory gate. The previous short and delayed windows still exist and still
-  measure what they measured; this record only shows that the short window's CPU verdict is
+- It does not replace a memory gate that runs automatically. The previous short and delayed windows
+  still exist and still measure what they measured, but with three pairs each they can only report
+  a failure and never pass, and their workflow steps are named as observations; this record only shows that the short window's CPU verdict is
   dominated by the host's start-up burst, since the same product bytes produced +1.1992 and −5.6037
   points in two campaigns.
 

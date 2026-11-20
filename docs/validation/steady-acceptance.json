@@ -23,7 +23,9 @@
     "bun": "1.3.14",
     "opencode": "1.18.30",
     "terminal": "Bun POSIX PTY, xterm-256color, 140x40",
-    "sizes": [250],
+    "sizes": [
+      250
+    ],
     "repetitions": 10,
     "settleMs": 30000,
     "observationMs": 70000,
@@ -52,7 +54,10 @@
         "pairedRepetitions": 10
       },
       "evaluablePairs": 8,
-      "warmupDiscarded": [1, 2],
+      "warmupDiscarded": [
+        1,
+        2
+      ],
       "droppedPairs": [],
       "verdict": "INCONCLUSIVE",
       "blocking": false,
@@ -70,12 +75,20 @@
         "assessment": "INCONCLUSIVE"
       },
       "rssEndMiB": {
-        "median": 0.8906,
-        "drift": -2
+        "median": -2.0,
+        "iqr": 129.8008,
+        "budgeted": false,
+        "note": "Reported as drift, computed over evaluable pairs with the same linear quantile as every other median in this record."
       },
       "bootToReadyMs": {
-        "productRange": [2947.5, 3168.6],
-        "controlRange": [2777.1, 3021.4]
+        "productRange": [
+          2947.5,
+          3168.6
+        ],
+        "controlRange": [
+          2777.1,
+          3021.4
+        ]
       },
       "pairs": [
         {
@@ -178,7 +191,18 @@
           "productBootToReadyMs": 3063.2,
           "controlBootToReadyMs": 2975.0
         }
-      ]
+      ],
+      "readySpreadMiB": {
+        "product": 86.6446,
+        "control": 117.2461,
+        "note": "Per-arm spread of absolute resident memory at the ready checkpoint, over evaluable pairs. The paired difference inherits twice this spread, which is why its interquartile range exceeds the budget."
+      },
+      "bootToReadyDeltaMs": {
+        "median": 194.6,
+        "min": -73.9,
+        "max": 323.6,
+        "note": "Paired product-minus-control difference to the ready checkpoint; positive means the product reported ready later."
+      }
     },
     {
       "label": "pre-registered-extension-16-pairs",
@@ -194,7 +218,10 @@
         "pairedRepetitions": 16
       },
       "evaluablePairs": 14,
-      "warmupDiscarded": [1, 2],
+      "warmupDiscarded": [
+        1,
+        2
+      ],
       "droppedPairs": [],
       "verdict": "INCONCLUSIVE",
       "blocking": false,
@@ -212,12 +239,20 @@
         "assessment": "INCONCLUSIVE"
       },
       "rssEndMiB": {
-        "median": 39.1719,
-        "drift": 9.8223
+        "median": 9.8223,
+        "iqr": 63.7392,
+        "budgeted": false,
+        "note": "Reported as drift, computed over evaluable pairs with the same linear quantile as every other median in this record."
       },
       "bootToReadyMs": {
-        "productRange": [2865.2, 3274.0],
-        "controlRange": [2740.8, 3093.9]
+        "productRange": [
+          2865.2,
+          3274.0
+        ],
+        "controlRange": [
+          2740.8,
+          3093.9
+        ]
       },
       "pairs": [
         {
@@ -380,7 +415,18 @@
           "productBootToReadyMs": 3121.4,
           "controlBootToReadyMs": 3093.9
         }
-      ]
+      ],
+      "readySpreadMiB": {
+        "product": 142.4141,
+        "control": 129.6485,
+        "note": "Per-arm spread of absolute resident memory at the ready checkpoint, over evaluable pairs. The paired difference inherits twice this spread, which is why its interquartile range exceeds the budget."
+      },
+      "bootToReadyDeltaMs": {
+        "median": 174.9,
+        "min": -122.0,
+        "max": 461.9,
+        "note": "Paired product-minus-control difference to the ready checkpoint; positive means the product reported ready later."
+      }
     }
   ],
   "conclusion": {
@@ -389,6 +435,13 @@
     "blocking": false,
     "blockingMeaning": "No campaign produced a FAIL. INCONCLUSIVE neither blocks nor accepts: the measurement step exits successfully and only the workflow gate that requires PASS turns the run red.",
     "instrumentLimit": "A robust interquartile range is insensitive to sample size, so adding pairs does not narrow the noise band. At this baseline the paired cross-process RSS instrument cannot resolve the 64 MiB budget under the pre-registered rule; the pre-registered single extension was consumed and the method decision is handed to the user.",
-    "productFootprintFromWithinProcessDiagnostics": "The activation-attribution and phase diagnostics measure the same product inside one host process, where import and activation deltas were 1.3 MiB and about 0 MiB respectively and the total stayed far below the budget."
+    "productFootprintFromWithinProcessDiagnostics": "The activation-attribution and phase diagnostics measure the same product inside one host process, where import and activation deltas were 1.3 MiB and about 0 MiB respectively and the total stayed far below the budget.",
+    "rssEndDrift": "The end-of-window resident delta is reported as drift and is not budgeted; in these campaigns it moved between roughly -4 and +10 MiB at the median while individual pairs spanned hundreds of MiB.",
+    "checkpointEvidence": {
+      "source": "docs/validation/memory-phase-attribution.json and the phase artifact of run 42425416143",
+      "controlSpreadAtReadyMiB": 40.98,
+      "controlSpreadAt45sMiB": 100.34,
+      "notReplicated": "In these campaigns the per-arm control spread at the ready checkpoint was 117.25 and 129.65 MiB, so the quieter checkpoint reduced one component of drift but did not put the cross-process floor below the 64 MiB budget."
+    }
   }
 }

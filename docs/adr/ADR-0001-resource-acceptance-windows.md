@@ -47,16 +47,27 @@ The old method measured the joint process over five seconds starting two seconds
 took the median of three pairs and applied a single threshold. It measured the union of the host's
 native mount transient and the product, with a sample too small to separate the two.
 
-The new method samples memory at a named early checkpoint, where the control-to-control spread is
-40.98 MiB and therefore below the 64 MiB budget, instead of 100.34 MiB at the forty-five-second
-mark. It measures CPU only after the transient has decayed, over eight evaluable pairs, and it
-separates signal from noise with an explicit band.
+The new method samples memory at a named early checkpoint, where the phase diagnostic measured a
+control-to-control spread of 40.98 MiB, below the 64 MiB budget, instead of 100.34 MiB at the
+forty-five-second mark. That figure is derived from the status `VmRSS` of the two control phases at
+the ready checkpoint and recorded in
+[`../validation/memory-phase-attribution.json`](../validation/memory-phase-attribution.json); it
+did not replicate in the steady campaigns, where the per-arm control spread at the same checkpoint
+was 117.25 and 129.65 MiB. The checkpoint therefore removes one component of drift without moving
+the cross-process floor below the budget, which is why the campaigns came back inconclusive instead
+of passing. The method measures CPU only after the transient has decayed, over eight or fourteen
+evaluable pairs, and it separates signal from noise with an explicit band.
 
 ## Coverage lost
 
 - The short window can no longer fail on its own. A regression confined to the first seconds is
   caught only when it also exceeds three times the IQR in the steady window.
 - Long-window resident memory is reported but unbudgeted; only monotonic growth escalates.
+- Automatic pull-request resource gating is now observational. The cold and delayed windows keep
+  three pairs, below the five-pair minimum, so they can report a failure but can never pass, and
+  their workflow steps say so instead of claiming a budget decision. The window that decides the
+  budgets is the steady campaign, which is a manual dispatch and does not run on every pull
+  request.
 - The steady window measures 250 sessions only, so smaller lists rely on the recorded cold window
   for observation rather than acceptance.
 

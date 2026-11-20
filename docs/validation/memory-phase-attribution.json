@@ -146,5 +146,21 @@
     "Shallow heap totals omit resident native and allocator ownership.",
     "No cross-run result supersedes a prior failure.",
     "Actual local and hosted 1.18.30 binary SHA-256 matches."
-  ]
+  ],
+  "readyCheckpointControlSpread": {
+    "metric": "process status VmRSS at the ready checkpoint, the same counter the acceptance sampler reads from /proc/<pid>/stat",
+    "source": "phases/summary.json of run 42425416143, snapshots of labels 1-control and 8-control",
+    "readyMiB": {
+      "first": 743.3515625,
+      "second": 784.328125,
+      "spread": 40.9765625
+    },
+    "readyPlus20sMiB": {
+      "spread": 100.92578125
+    },
+    "readyPlus45sMiB": {
+      "spread": 100.3359375
+    },
+    "interpretation": "The ready checkpoint is quieter than the forty-five-second mark in this diagnostic, which is why the steady acceptance window budgets memory there. The steady campaigns then measured per-arm control spreads of 117.25 and 129.65 MiB at the same checkpoint, so the quieter checkpoint reduced this component of drift but did not bring the cross-process floor below the 64 MiB budget."
+  }
 }

@@ -144,7 +144,10 @@ jobs:
           SIDEBAR_REMOTE_FRAMES:
             ${{ github.workspace }}/.sidebar-lab/actions/native/remote-frames.json
         run: bun scripts/smoke-sidebar-remote.ts
-      - name: Paired full sidebar CPU and RSS comparison
+      # The legacy cold and delayed windows run three pairs, below the five-pair minimum, so they
+      # can report a failure but can never pass on their own. They stay here as recorded coverage;
+      # the budgets are decided by the steady acceptance campaign.
+      - name: Paired full sidebar CPU and RSS observation (cold window, reported)
         id: resources
         continue-on-error: true
         env:
@@ -157,7 +160,7 @@ jobs:
         env:
           SIDEBAR_SUSTAINED_DIR: ${{ github.workspace }}/.sidebar-lab/actions/native/sustained
         run: bun scripts/benchmark-sidebar-sustained.ts
-      - name: Additional delayed-start resource gate
+      - name: Delayed-start resource observation (reported, budgets the end-of-window delta)
         id: delayed
         continue-on-error: true
         env:
@@ -174,13 +177,15 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
-      - name: Require native scenario and budgets
+      - name: Require native transport and no resource failure
         if: always()
         env:
           REMOTE_RESULT: ${{ steps.remote.outcome }}
           RESOURCE_RESULT: ${{ steps.resources.outcome }}
           DIAGNOSTIC_RESULT: ${{ steps.diagnostic.outcome }}
           DELAYED_RESULT: ${{ steps.delayed.outcome }}
+        # A non-success outcome here means the window reported a budget failure; it never means a
+        # budget passed. See docs/validation/resource-acceptance-criteria.md for which window decides.
         run:
           test "$REMOTE_RESULT" = success && test "$RESOURCE_RESULT" = success && test
           "$DIAGNOSTIC_RESULT" = success && test "$DELAYED_RESULT" = success
