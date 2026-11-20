@@ -55,9 +55,14 @@ async function waitForMeasurement(
   return new Promise((resolve, reject) => {
     let watcher: FSWatcher | undefined;
     let settled = false;
+    const declaredTimeoutMs = Number(process.env.SIDEBAR_RESOURCE_PROBE_TIMEOUT_MS ?? "");
     const timeout = setTimeout(
       () => finish(new Error("Parent did not finish the bounded resource measurement.")),
-      process.env.SIDEBAR_RESOURCE_SUSTAINED === "true" ? 270_000 : 90_000,
+      Number.isFinite(declaredTimeoutMs) && declaredTimeoutMs > 0
+        ? declaredTimeoutMs
+        : process.env.SIDEBAR_RESOURCE_SUSTAINED === "true"
+          ? 270_000
+          : 90_000,
     );
     function finish(error?: unknown) {
       if (settled) return;

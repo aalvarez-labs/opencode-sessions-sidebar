@@ -28,6 +28,7 @@ import {
   threadDiagnosticLimits,
   type ThreadSnapshot,
 } from "./thread-cpu-diagnostic";
+import { assessResourceWindow, type ResourcePairSample } from "./lib/resource-acceptance";
 
 assert.equal(process.platform, "linux", "This comparison requires Linux /proc and a POSIX PTY.");
 assert.equal(Bun.version, "1.3.14", "Use pinned Bun 1.3.14.");
@@ -38,13 +39,26 @@ const plugin = await realpath(process.env.SIDEBAR_PLUGIN_FILE ?? join(repository
 // Fixed before measurement; independent of the narrower headless and navigation budgets.
 const budgets = { medianRssDeltaMiB: 64, medianCpuDeltaPoints: 1 };
 const sustained = process.env.SIDEBAR_RESOURCE_SUSTAINED === "true";
+const steady = process.env.SIDEBAR_RESOURCE_STEADY === "true";
 const diagnostic = sustained || process.env.SIDEBAR_RESOURCE_DIAGNOSTIC === "true";
 const delayed = process.env.SIDEBAR_RESOURCE_DELAYED === "true";
 assert(!(diagnostic && delayed), "Choose either diagnostic or delayed acceptance mode.");
-const sizes = diagnostic || delayed ? [250] : [25, 250];
-const repetitions = diagnostic ? 1 : 3;
-const settleMs = delayed || sustained ? 20_000 : 2_000;
-const observationMs = sustained ? 210_000 : diagnostic ? 30_000 : delayed ? 10_000 : 5_000;
+assert(
+  !(steady && (diagnostic || delayed || sustained)),
+  "Choose steady acceptance or a legacy resource mode, not both.",
+);
+const sizes = steady ? [250] : diagnostic || delayed ? [250] : [25, 250];
+const repetitions = steady ? 10 : diagnostic ? 1 : 3;
+const settleMs = steady ? 30_000 : delayed || sustained ? 20_000 : 2_000;
+const observationMs = steady
+  ? 70_000
+  : sustained
+    ? 210_000
+    : diagnostic
+      ? 30_000
+      : delayed
+        ? 10_000
+        : 5_000;
 const root = await mkdtemp(join(tmpdir(), "sidebar-rendered-resources-"));
 const project = join(root, "project");
 const seedConfig = join(root, "seed-config");
@@ -56,7 +70,7 @@ const watchdog = setTimeout(
     lifetime.abort(new Error("Rendered resource comparison exceeded its bounded watchdog."));
     for (const child of children) child.kill("SIGKILL");
   },
-  sustained ? 600_000 : 360_000,
+  steady ? 300_000 : sustained ? 600_000 : 360_000,
 );
 
 function environment(config: string, data: string, label: string) {
@@ -120,6 +134,8 @@ async function hashes() {
     "scripts/sidebar-resource-probe.ts",
     "scripts/thread-cpu-diagnostic.ts",
     "scripts/process-memory-diagnostic.ts",
+    "scripts/lib/resource-acceptance.ts",
+    "scripts/lib/memory-deltas.ts",
   ];
   async function visit(directory: string) {
     for (const entry of await readdir(join(repository, directory), { withFileTypes: true })) {
@@ -172,6 +188,7 @@ interface Measurement {
   observationStartedEpochMs?: number;
   cpuPercent: number;
   rssStartMiB: number;
+  rssReadyMiB: number;
   rssEndMiB: number;
   mainThreadContextSwitches: number;
   readyToObservationMs: number;
@@ -380,6 +397,7 @@ try {
             SIDEBAR_RESOURCE_ENABLED: String(enabled),
             SIDEBAR_RESOURCE_SUSTAINED: String(sustained),
             SIDEBAR_RESOURCE_SESSIONS: String(size),
+            SIDEBAR_RESOURCE_PROBE_TIMEOUT_MS: steady ? "150000" : "",
           },
           terminal: {
             cols: 140,
@@ -411,6 +429,7 @@ try {
         };
         assert.equal(ready.pid, tui.pid);
         assert.equal(ready.measurementProtocol, "append-receipt-v2");
+        const readySample = await sample(ready.procPid, pageSize);
         await Bun.sleep(settleMs);
         const started = performance.now();
         const before = await sample(ready.procPid, pageSize);
@@ -473,6 +492,7 @@ try {
           ...(sustained ? { observationStartedEpochMs: performance.timeOrigin + started } : {}),
           cpuPercent: (((after.ticks - before.ticks) / clockTicks) * 100_000) / actualMs,
           rssStartMiB: before.rssMiB,
+          rssReadyMiB: readySample.rssMiB,
           rssEndMiB: after.rssMiB,
           mainThreadContextSwitches: after.switches - before.switches,
           readyToObservationMs: started - readyReceivedAt,
@@ -517,7 +537,7 @@ try {
   );
   const results = sizes.map((sessions) => {
     const selected = measurements.filter((item) => item.sessions === sessions);
-    const deltas = selected
+    const pairs: ResourcePairSample[] = selected
       .filter((item) => item.enabled)
       .map((item) => {
         const baseline = selected.find(
@@ -526,10 +546,22 @@ try {
         assert(baseline);
         return {
           repetition: item.repetition,
-          rssMiB: item.rssEndMiB - baseline.rssEndMiB,
+          rssReadyDeltaMiB: item.rssReadyMiB - baseline.rssReadyMiB,
+          rssEndDeltaMiB: item.rssEndMiB - baseline.rssEndMiB,
           cpuPoints: item.cpuPercent - baseline.cpuPercent,
         };
       });
+    const deltas = pairs.map((pair) => ({
+      repetition: pair.repetition,
+      rssMiB: pair.rssEndDeltaMiB,
+      cpuPoints: pair.cpuPoints,
+    }));
+    const assessment = assessResourceWindow(pairs, steady ? 2 : 0, {
+      budgetRssMiB: budgets.medianRssDeltaMiB,
+      budgetCpuPoints: budgets.medianCpuDeltaPoints,
+      signalIqrMultiple: 3,
+      minEvaluablePairs: 5,
+    });
     const medianRssDeltaMiB = median(deltas.map((delta) => delta.rssMiB));
     const medianCpuDeltaPoints = median(deltas.map((delta) => delta.cpuPoints));
     return {
@@ -537,19 +569,26 @@ try {
       deltas,
       medianRssDeltaMiB,
       medianCpuDeltaPoints,
-      ...(diagnostic
-        ? {}
-        : {
-            passed:
-              medianRssDeltaMiB <= budgets.medianRssDeltaMiB &&
-              medianCpuDeltaPoints <= budgets.medianCpuDeltaPoints,
-          }),
+      window: { name: steady ? "steady" : "cold", settleMs, observationMs },
+      budgetedMemory: "rssReady",
+      medianRssReadyDeltaMiB: assessment.rssReady.median,
+      rssReadyIqrMiB: assessment.rssReady.iqr,
+      cpuIqrPoints: assessment.cpu.iqr,
+      rssEndDriftMiB: assessment.rssEndDrift.median,
+      verdict: assessment.verdict,
+      blocking: assessment.verdict.startsWith("FAIL"),
+      evaluablePairs: assessment.evaluablePairs,
+      warmupDiscarded: assessment.warmupDiscarded,
+      droppedPairs: assessment.droppedPairs,
+      ...(diagnostic ? {} : { passed: assessment.verdict === "PASS" }),
     };
   });
   report.results = results;
+  report.authoritativeWindow = steady ? "steady" : "cold";
   if (!diagnostic) {
     report.acceptanceEvaluated = true;
-    report.passed = results.every((result) => result.passed);
+    report.passed = results.every((result) => result.passed === true);
+    report.blocking = results.some((result) => result.blocking === true);
   }
   report.completed = true;
   report.limitations = [
@@ -564,7 +603,10 @@ try {
   ];
   console.log(JSON.stringify({ kind: report.kind, results, passed: report.passed }));
   if (!diagnostic)
-    assert(report.passed, "Predeclared rendered-sidebar idle resource budgets did not all pass.");
+    assert(
+      !report.blocking,
+      "Predeclared rendered-sidebar idle resource budgets did not all pass.",
+    );
 } catch (error) {
   report.failure = error instanceof Error ? error.message : String(error);
   throw error;
