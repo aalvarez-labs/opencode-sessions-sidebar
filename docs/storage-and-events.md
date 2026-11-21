@@ -11,6 +11,12 @@ The caller supplies a stable `hostId` and `projectId`. Session keys are the cano
 assumed local paths are not server identities. The caller must also supply an explicit local
 directory reserved for the plugin's files. Do not derive it from a remote host's reported path.
 
+OpenCode 1.19.3 reports the same project ID, `global`, for unrelated directories outside Git.
+Worktrees can also share their Git project's ID. On the same configured host, these directories
+therefore share an organization document. The sidebar filters visible rows by the active directory
+and workspace. A configured extension receives the project-wide organization snapshot, including
+references to sessions outside that view; its commands can target only loaded sessions.
+
 The first backend uses asynchronous filesystem operations and one document per scope. It does not
 edit OpenCode's database, session files, or native preferences. The public V1 KV API has a void
 `set()` and startup `ready` flag, but no compare-and-swap or write receipt; those operations cannot

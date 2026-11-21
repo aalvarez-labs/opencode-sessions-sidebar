@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { isAbsolute } from "node:path";
+import { ORGANIZATION_LIMITS } from "../organization";
 import type {
   createOrganizationService,
   OrganizationAction,
@@ -266,8 +267,17 @@ export function createExtensionRuntime(options: ExtensionRuntimeOptions) {
         if (!authorized()) return result("unavailable", "Extension callback is no longer active.");
         if (!action || typeof action !== "object" || "executionSequence" in action)
           return result("invalid", "Extensions cannot supply host execution evidence.");
-        if ("sessionId" in action && !current.session(action.sessionId))
+        if (action.type === "reorder-later") {
+          if (
+            !Array.isArray(action.sessionIds) ||
+            action.sessionIds.length > ORGANIZATION_LIMITS.maxEntries
+          )
+            return result("invalid", "Invalid Later order.");
+          if (action.sessionIds.some((id) => !current.session(id)))
+            return result("unavailable", "Session is outside the loaded scope.");
+        } else if ("sessionId" in action && !current.session(action.sessionId)) {
           return result("unavailable", "Session is outside the loaded scope.");
+        }
         const outcome = await current.service.dispatch(
           {
             ...action,

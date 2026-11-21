@@ -487,6 +487,39 @@ export default {
       organization.dispose();
     }
   });
+  test("Later reordering requires every persisted session to be loaded in the current view", async () => {
+    let outcome: OrganizationResult | undefined;
+    const f = await fixture(
+      extension(async (context) => {
+        outcome = await context.dispatch({ type: "reorder-later", sessionIds: ["two", "one"] });
+      }),
+    );
+    try {
+      for (const [expectedRevision, sessionId] of ["one", "two"].entries()) {
+        const added = await f.organization.dispatch({
+          type: "add-later",
+          sessionId,
+          expectedRevision,
+          commandId: "seed-" + sessionId,
+          origin: { type: "user" },
+        });
+        expect(added.status).toBe("committed");
+      }
+      const before = f.organization.snapshot().document!;
+      await f.runtime.run("synthetic:action", "one");
+      expect(outcome?.status).toBe("unavailable");
+      expect(f.organization.snapshot().document).toEqual(before);
+
+      f.runtime.attach(f.organization, (id) =>
+        id === "one" || id === "two" ? { ...session, id } : undefined,
+      );
+      await f.runtime.run("synthetic:action", "one");
+      expect(outcome?.status).toBe("committed");
+      expect(f.organization.snapshot().document!.later).toEqual([...before.later].reverse());
+    } finally {
+      f.dispose();
+    }
+  });
   test("predicates fail closed, missing sessions and forged execution evidence are refused", async () => {
     let forged!: OrganizationResult;
     const f = await fixture(

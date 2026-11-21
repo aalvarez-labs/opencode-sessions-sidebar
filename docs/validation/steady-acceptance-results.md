@@ -6,8 +6,9 @@ against the product on `perf/idle-render-20261107`. The first campaign used the 
 repetitions the criteria pre-register; the second consumed the single pre-registered extension to
 sixteen pairs.
 
-This record does not accept V1. It reports what the steady window measured, what it could not
-measure, and which method decision is still open.
+This record preserves the measured results. The
+[owner decision for the V1 harness candidate](../adr/ADR-0001-resource-acceptance-windows.md#owner-decision-for-the-v1-harness-candidate-2026-11-21)
+accepts the uncertainty in these two RSS measurements for the pinned build.
 
 ## Method
 
@@ -26,10 +27,15 @@ and still turn its workflow gate red, which is what both campaigns did.
 
 ## Campaigns
 
-| Campaign  | Run                                                                                                | Source commit | Pairs | Evaluable | Source revision                        |
-| --------- | -------------------------------------------------------------------------------------------------- | ------------- | ----: | --------: | -------------------------------------- |
-| Initial   | [44696780544](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44696780544) | `923acc5`     |    10 |         8 | watchdog sized for the whole campaign  |
-| Extension | [44814989636](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44814989636) | `c8cda87`     |    16 |        14 | pair count exposed as a dispatch input |
+| Campaign  | Run                                                                                                | Source commit          | Pairs | Evaluable | Source revision                        |
+| --------- | -------------------------------------------------------------------------------------------------- | ---------------------- | ----: | --------: | -------------------------------------- |
+| Initial   | [44696780544](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44696780544) | [`923acc5`][initial]   |    10 |         8 | watchdog sized for the whole campaign  |
+| Extension | [44814989636](https://github.com/aalvarez-labs/opencode-sessions-sidebar/actions/runs/44814989636) | [`c8cda87`][extension] |    16 |        14 | pair count exposed as a dispatch input |
+
+[initial]:
+  https://github.com/aalvarez-labs/opencode-sessions-sidebar/commit/923acc59a82e71e66cc166a3b91eb10e09afc819
+[extension]:
+  https://github.com/aalvarez-labs/opencode-sessions-sidebar/commit/c8cda879820ea44c67e9c0bb7c0fbbff133eee59
 
 ### CPU over the steady window
 
@@ -147,9 +153,9 @@ assertions that are genuine invariants: three completed health requests inside t
 healthy, each under the two-second deadline, spaced at least sixty seconds apart. That is what the
 window exists to prove, and it is unaffected by allocator noise.
 
-## Open decision
+## Options recorded at escalation (2026-11-20)
 
-The resident-memory gate needs one of three treatments, and none of them can be chosen silently:
+The campaigns raised three options for the future of the resident-memory gate:
 
 1. Move the memory budget onto a within-process measurement taken inside one host, where the
    activation and import deltas for the same product were about 0 and 1.3 MiB. This removes

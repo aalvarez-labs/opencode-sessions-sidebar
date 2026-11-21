@@ -209,6 +209,29 @@ async function ready() {
   }
 }
 
+async function createAtCapacity() {
+  const fixture = await controllerFixture();
+  const { host, controller } = fixture;
+  try {
+    host.sessions = Array.from({ length: 500 }, (_, i) => syntheticSession(`existing-${i}`));
+    host.createWrite = async () => {
+      const created = syntheticSession("new-session");
+      host.sessions.push(created);
+      return created;
+    };
+    await controller.connect(host.directory);
+    await controller.native("create", undefined, "New session");
+    assert.equal(host.calls.create, 1);
+    assert.equal(host.sessions.at(-1)?.id, "new-session");
+    assert.equal(controller.rows().length, 500);
+    assert.deepEqual(host.navigations, []);
+    assert.equal(host.toasts.at(-1)?.variant, "warning");
+    assert.match(host.toasts.at(-1)!.message, /session created.*could not be opened/i);
+  } finally {
+    await fixture.dispose();
+  }
+}
+
 async function modelInvalidation() {
   const fixture = await controllerFixture();
   const { host, controller } = fixture;
@@ -671,6 +694,7 @@ if (import.meta.main) {
   const scenarios: Record<string, () => Promise<void>> = {
     ready,
     "model-invalidation": modelInvalidation,
+    "create-at-capacity": createAtCapacity,
     "stale-guard": staleGuard,
     disposed,
     "bounded-lookup": boundedLookup,

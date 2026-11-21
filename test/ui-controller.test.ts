@@ -7,6 +7,7 @@ describe("reactive sidebar controller", () => {
   for (const scenario of [
     "ready",
     "model-invalidation",
+    "create-at-capacity",
     "stale-guard",
     "disposed",
     "bounded-lookup",

@@ -399,8 +399,14 @@ export function createSidebarController(api: TuiPluginApi, options: SidebarOptio
       if (!active() || generation !== epoch) return;
       if (result.status !== "succeeded")
         notify(result.message ?? `Host operation ${result.status}`, "warning");
-      else if (action === "create" && result.sessionId) current.open(result.sessionId);
-      else notify(action === "delete" ? "Session deleted" : "Session renamed", "success");
+      else if (action === "create" && result.sessionId) {
+        const navigation = current.open(result.sessionId);
+        if (navigation.status !== "requested")
+          notify(
+            "Session created, but it could not be opened. Check the host session list.",
+            "warning",
+          );
+      } else notify(action === "delete" ? "Session deleted" : "Session renamed", "success");
     } catch {
       if (generation === epoch)
         notify(

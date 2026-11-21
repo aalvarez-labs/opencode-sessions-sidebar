@@ -2,6 +2,11 @@
 
 ## Unreleased development build
 
+- Preserve the order of Later when an extension asks to reorder a queue containing sessions outside
+  the active view. The extension can retry after all target sessions are loaded.
+- Warn when OpenCode creates a session but the sidebar cannot navigate to it. The message directs
+  the user to the host session list so they can find the session already created.
+
 - Space healthy global transport checks to 60 seconds, with 15-second retries after known failure
   and the existing two-second deadline. Native session events remain immediate. See the
   [quiet-health validation](docs/quiet-transport-health.md); no session cap or feature restriction.

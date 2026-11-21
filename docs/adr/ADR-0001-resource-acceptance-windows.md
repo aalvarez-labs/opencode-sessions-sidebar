@@ -102,3 +102,33 @@ samples are preserved in
 [`../validation/steady-acceptance.json`](../validation/steady-acceptance.json) and the narrative in
 [`../validation/steady-acceptance-results.md`](../validation/steady-acceptance-results.md). This
 record does not accept V1, and the pull request stays in draft.
+
+## Owner decision for the V1 harness candidate (2026-11-21)
+
+Arturo accepted the observed median RSS increase and its uncertainty as the memory criterion for V1.
+This build can be promoted after its other acceptance checks. This resolves the escalation for the
+runtime from [PR #9](https://github.com/aalvarez-labs/opencode-sessions-sidebar/pull/9) at
+[`f617d64`](https://github.com/aalvarez-labs/opencode-sessions-sidebar/commit/f617d64a8c1e9850139fefbfb300b272d0ceed2a),
+identified by the `dist/tui.js` SHA-256
+`4ba1671d7074735ebb604f41be2b8a3ef2064db5d51c4b19c6a1a52f96899b57`.
+
+The decision uses two campaigns on OpenCode 1.18.30 with 250 synthetic sessions. At the ready
+checkpoint the initial campaign measured a paired median of +45.4961 MiB (IQR 71.1084 MiB) and the
+extension measured +44.6914 MiB (IQR 107.8076 MiB). Both medians fall below 64 MiB, but both spreads
+exceed that budget. RSS and the combined instrument verdict remain **INCONCLUSIVE** in both runs.
+CPU **passed** in each, at +0.0286 and +0.0073 points against the 1.0-point budget. The spread
+leaves an increase above 64 MiB plausible, and these idle measurements do not bound peak memory or
+growth under sustained traffic.
+
+This exception covers only these two results for these runtime bytes. Future measurements retain the
+pre-registered thresholds and workflow verdicts. Combined harness validation and release approval
+remain separate decisions.
+
+### Scope of the subsequent integration build
+
+The next harness candidate uses a rebuilt `dist/tui.js` with SHA-256
+`87d9d143d8977a2778827146aae43783046219a02a2678907dc4013e2f3ddc85`. Its two runtime changes run when
+an extension submits a Later reorder and when a user creates a session. Neither changes the idle
+health timer or rendered row limits. The earlier CPU and RSS measurements still describe bundle
+`4ba1671d…` at `f617d64`. No new RSS verdict was measured for the rebuilt artifact. Extending the
+owner decision to these bytes requires an explicit scope review before promotion.

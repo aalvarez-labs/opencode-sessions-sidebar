@@ -45,15 +45,15 @@ computer when using SSH.
 dependencies and can exercise that installed artifact in stock OpenCode. A package check is not a
 public release or a guarantee about every terminal's active font.
 
-The [row-container optimization](docs/windowed-row-containers.md) reduces the render tree; its
-short-window CPU acceptance failed. The latest
-[quiet health cadence](docs/quiet-transport-health.md) reduces background requests and passes its
-local short, delayed and sustained resource comparisons. Hosted delayed RSS still fails at +80.66
-MiB against the +64 MiB limit, so resource acceptance remains open. Native disconnect/recovery
-passes on OpenCode 1.19.3; full harness integration remains pending. No session cap or feature
-restriction was introduced. The [V1 integration candidate](docs/v1-integration-candidate.md)
-describes the preceding frozen trial build; its hashes do not identify this newer optimization.
-Neither is stable release approval.
+The [steady acceptance campaigns](docs/validation/steady-acceptance-results.md) passed the idle CPU
+budget. Median RSS increases at readiness were about 45 MiB against the 64 MiB budget. Both RSS
+verdicts were **INCONCLUSIVE** because the spread exceeded that budget. The
+[V1 owner decision](docs/adr/ADR-0001-resource-acceptance-windows.md#owner-decision-for-the-v1-harness-candidate-2026-11-21)
+accepts this uncertainty for the measured `f617d64` build. The rebuilt integration candidate
+requires a scope review of that decision. Full harness validation and stable release approval remain
+pending. Native disconnect/recovery passed on OpenCode 1.19.3. The
+[earlier integration candidate](docs/v1-integration-candidate.md) records the hashes and validation
+of the preceding frozen trial build.
 
 ## Intended behavior
 
