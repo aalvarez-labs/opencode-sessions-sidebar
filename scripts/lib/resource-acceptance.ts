@@ -87,3 +87,35 @@ export function assessResourceWindow(
     assessment,
   };
 }
+
+/** Compare the one sustained pair to its reference budgets without issuing an acceptance verdict. */
+export function sustainedReferenceObservation(
+  rows: unknown,
+  budgets: { readonly rssMiB: number; readonly cpuPoints: number },
+) {
+  if (!Array.isArray(rows) || rows.length !== 1)
+    throw new TypeError("Expected one sustained result.");
+  const row = rows[0];
+  if (
+    row?.window?.name !== "sustained" ||
+    row.sessions !== 250 ||
+    row.evaluablePairs !== 1 ||
+    row.budgetedMemory !== "rssReady"
+  )
+    throw new TypeError("Expected one evaluable 250-session sustained pair budgeted at readiness.");
+  const rssMiB: unknown = row.medianBudgetedRssDeltaMiB;
+  const cpuPoints: unknown = row.cpuMedianPoints;
+  if (
+    typeof rssMiB !== "number" ||
+    !Number.isFinite(rssMiB) ||
+    rssMiB !== row.medianRssReadyDeltaMiB ||
+    typeof cpuPoints !== "number" ||
+    !Number.isFinite(cpuPoints)
+  )
+    throw new TypeError("Expected finite CPU and matching budgeted and ready RSS medians.");
+  return {
+    acceptanceEvaluated: false,
+    referenceObservation: { budgetedMemory: "rssReady", rssMiB, cpuPoints },
+    referenceBudgetsMet: rssMiB <= budgets.rssMiB && cpuPoints <= budgets.cpuPoints,
+  };
+}

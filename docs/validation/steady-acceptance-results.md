@@ -153,6 +153,28 @@ assertions that are genuine invariants: three completed health requests inside t
 healthy, each under the two-second deadline, spaced at least sixty seconds apart. That is what the
 window exists to prove, and it is unaffected by allocator noise.
 
+### Rebuilt integration artifact, November 21, 2026
+
+A Linux observation used stock OpenCode 1.18.30 with the sidebar from
+[`3d687cd`](https://github.com/aalvarez-labs/opencode-sessions-sidebar/commit/3d687cd0c80a850bdb5004895ec823d80001f26e).
+The bundle SHA-256 was `87d9d143d8977a2778827146aae43783046219a02a2678907dc4013e2f3ddc85`. One
+baseline/sidebar pair used 250 sessions, settled for 20 seconds and sampled CPU over 210 seconds.
+Three healthy requests completed within the window.
+
+| Paired observation                                                        |           Delta |  Reference |
+| ------------------------------------------------------------------------- | --------------: | ---------: |
+| RSS at readiness (733.4453 MiB with the sidebar, 663.4844 MiB without it) |    +69.9609 MiB |     64 MiB |
+| CPU over the observation window                                           | +0.88039 points |  1.0 point |
+| RSS at the end of the window                                              |    +24.8516 MiB | Diagnostic |
+
+The original summary recorded `referenceBudgetsMet: true` after comparing final RSS. Replaying its
+unchanged measurement against the named `rssReady` field gives **false**: CPU was within the
+reference and readiness RSS exceeded it. The original summary SHA-256 is
+`7175323c3999f05c8d64e006a95f5c386239e1593d509ed3ca8c55829b477233`. The instrument recorded
+`INCONCLUSIVE` and `acceptanceEvaluated: false`; one pair falls below the five-pair minimum. The
+owner decision on the earlier `f617d64` build retains its original scope. The separate stock
+OpenCode 1.19.3 package smoke tested TUI behavior; its checks supply no CPU or RSS measurement.
+
 ## Options recorded at escalation (2026-11-20)
 
 The campaigns raised three options for the future of the resident-memory gate:

@@ -4,12 +4,14 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { sustainedReferenceObservation } from "./lib/resource-acceptance";
 
 const repository = resolve(import.meta.dir, "..");
 const output = resolve(process.env.SIDEBAR_SUSTAINED_DIR ?? ".sidebar-lab/sustained");
 const product = resolve(repository, "dist/tui.js");
 const digest = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
 await mkdir(output, { recursive: true });
+const referenceBudgets = { rssMiB: 64, cpuPoints: 1 };
 const summary: Record<string, unknown> = {
   completed: false,
   acceptanceEvaluated: false,
@@ -20,7 +22,7 @@ const summary: Record<string, unknown> = {
     settleMs: 20_000,
     observationMs: 210_000,
     requiredHealthyCallsInWindow: 3,
-    referenceBudgets: { rssMiB: 64, cpuPoints: 1 },
+    referenceBudgets,
     retries: 0,
   },
   runtimeSha256: digest(await readFile(product)),
@@ -94,7 +96,7 @@ try {
   });
   assert.equal(await child.exited, 0, "Sustained native observation failed.");
   const result = JSON.parse(await readFile(report, "utf8"));
-  assert(result.completed && !result.acceptanceEvaluated);
+  assert(result.completed === true && result.acceptanceEvaluated === false);
   assert.equal(result.measurements.length, 2);
   assert(result.measurements.every((m: any) => m.probe.passed));
   const enabled = result.measurements.find((m: any) => m.enabled);
@@ -119,8 +121,7 @@ try {
   summary.results = result.results;
   // A single pair cannot carry a budget verdict, so this window reports the comparison and refers
   // the decision to the steady campaign. See docs/validation/resource-acceptance-criteria.md.
-  const delta = result.results[0];
-  summary.referenceBudgetsMet = delta.medianRssDeltaMiB <= 64 && delta.medianCpuDeltaPoints <= 1;
+  Object.assign(summary, sustainedReferenceObservation(result.results, referenceBudgets));
   summary.referenceBudgetNote =
     "Reported only: one pair is below the five-pair minimum, so this window can neither pass nor fail a budget.";
   summary.completed = true;
